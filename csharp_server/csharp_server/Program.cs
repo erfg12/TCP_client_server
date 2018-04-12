@@ -58,8 +58,8 @@ namespace csharp_server
                 {
                     //received
                     storage.AddRange(bytes); //store it.
-                    if (bytes.Contains((byte)0)) //done?
-                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, i);
+                    if (Array.IndexOf(bytes, (byte)0) >= 0) //done?
+                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count());
                     else //maybe client has lag, wait for null char
                         continue;
 
