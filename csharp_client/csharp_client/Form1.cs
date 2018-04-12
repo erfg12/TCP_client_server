@@ -21,7 +21,7 @@ namespace csharp_client
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            Connect("10.1.10.200");
+            Connect("127.0.0.1");
         }
 
         NetworkStream stream;
@@ -64,14 +64,20 @@ namespace csharp_client
         private void button1_Click(object sender, EventArgs e)
         {
             //send
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text);
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes("s|" + sendTextbox.Text.Length); //alter buffer size
+            stream.Write(data, 0, data.Length);
+
+            data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text); //send data
             stream.Write(data, 0, data.Length);
             AppndText("CLIENT:" + sendTextbox.Text, Color.Green);
-            data = new Byte[2048];
 
             //receive
             String responseData = String.Empty;
-            Int32 bytes = stream.Read(data, 0, data.Length);
+            Int32 bytes = stream.Read(data, 0, 4); //first get listen size
+            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+
+            data = new byte[Convert.ToInt32(responseData)]; //change to new size
+            bytes = stream.Read(data, 0, data.Length); //read real string
             responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
             AppndText("SERVER:" + responseData, Color.Red);
         }
