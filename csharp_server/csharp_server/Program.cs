@@ -48,15 +48,33 @@ namespace csharp_server
 
             try
             {
-                Byte[] bytes = new Byte[6]; //start here. Big enough for size string (s|####)
+                Byte[] bytes = new Byte[4]; //start here. Big enough for size string ####
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     //received
                     data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
 
+                    if (i < 4) //too small
+                    {
+                        Console.WriteLine("Err: too few bytes");
+                        continue;
+                    }
+
+                    if (i == 4) //alter byte size, read msg
+                    {
+                        bytes = new byte[Convert.ToInt32(data)];
+                        continue;
+                    }
+
+                    if (i < bytes.Length) //check if we received the proper size msg
+                    {
+                        Console.WriteLine("Err: received incorrect msg size");
+                        continue;
+                    }
+
+                    //for commands in the future
                     string[] args = new string[data.Length];
                     string[] cmd = new string[data.Length];
-
                     if (data.Contains("|"))
                     {
                         //Console.WriteLine("[DEBUG] Received: {0}", data);
@@ -65,21 +83,17 @@ namespace csharp_server
                             args = cmd[1].Split(',');
                         else
                             args[0] = cmd[1];
-
-                        if (cmd[0].Contains("s"))
-                        {
-                            if (Convert.ToInt32(args[0]) < 6) continue; //minimum for size string
-                            //Console.WriteLine("[DEBUG] changing buffer size to " + args[0]);
-                            bytes = new byte[Convert.ToInt32(args[0])];
-                        }
                         continue;
                     }
+                    //end cmds
 
                     //send a response to client
                     Console.WriteLine("Received: {0}", data);
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes("I received your message!"); //change this later
                     stream.Write(Encoding.ASCII.GetBytes(msg.Length.ToString().PadLeft(4, '0')), 0, 4); //send length, always 4 bytes
                     stream.Write(msg, 0, msg.Length);
+
+                    bytes = new Byte[4]; //reset
                 }
             }
             catch

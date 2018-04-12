@@ -64,7 +64,19 @@ namespace csharp_client
         private void button1_Click(object sender, EventArgs e)
         {
             //send
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes("s|" + sendTextbox.Text.Length); //alter buffer size
+            if (sendTextbox.Text.Length > 9999)
+            {
+                AppndText("ERR: Too much txt!", Color.Red);
+                return;
+            }
+
+            if (sendTextbox.Text.Length < 5)
+            {
+                AppndText("ERR: Too little txt!", Color.Red);
+                return;
+            }
+
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text.Length.ToString().PadLeft(4, '0')); //alter buffer size
             stream.Write(data, 0, data.Length);
 
             data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text); //send data
