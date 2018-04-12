@@ -11,6 +11,7 @@ namespace csharp_server
 {
     class Program
     {
+        static List<NetworkStream> cl = new List<NetworkStream>();
         static void Main(string[] args)
         {
             TcpListener server = null;
@@ -42,12 +43,20 @@ namespace csharp_server
                 server.Stop();
             }
         }
+        static void broadcast(byte[] msg)
+        {
+            foreach (NetworkStream n in cl)
+            {
+                n.Write(msg, 0, msg.Length);
+            }
+        }
         private static void ThreadProc(object obj)
         {
             //Console.WriteLine("[DEBUG] client connection passed to ThreadProc...");
             String data = null;
             var client = (TcpClient)obj;
             NetworkStream stream = client.GetStream();
+            cl.Add(stream);
             int i;
 
             try
@@ -57,8 +66,10 @@ namespace csharp_server
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     //received
-                    storage.AddRange(bytes); //store it.
-                    if (Array.IndexOf(bytes, (byte)0) >= 0) //done?
+                    if (i > 0)
+                        storage.AddRange(bytes.Take(i)); //store it.
+                    
+                    if (Array.IndexOf(bytes.Take(i).ToArray(), (byte)0) >= 0) //done?
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count());
                     else //maybe client has lag, wait for null char
                         continue;
@@ -80,8 +91,10 @@ namespace csharp_server
 
                     //send a response to client
                     Console.WriteLine("Received: {0}", data);
-                    byte[] msg = System.Text.Encoding.ASCII.GetBytes("I received your message!"); //change this later
-                    stream.Write(msg, 0, msg.Length);
+
+                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(data); //change this later
+                    broadcast(msg);
+                    //stream.Write(msg, 0, msg.Length);
 
                     storage.Clear(); //empty storage
                 }

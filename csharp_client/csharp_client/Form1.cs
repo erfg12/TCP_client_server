@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -25,6 +26,7 @@ namespace csharp_client
         }
 
         NetworkStream stream;
+        TcpClient client;
 
         //connect to server
         void Connect(String server)
@@ -32,9 +34,12 @@ namespace csharp_client
             try
             {
                 Int32 port = 13000;
-                TcpClient client = new TcpClient(server, port);
+                client = new TcpClient(server, port);
                 stream = client.GetStream();
-                AppndText("SERVER: You are now connected, welcome!", Color.Gray);
+                Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + " has connected to the server!" + '\0'); //send data
+                stream.Write(data, 0, data.Length);
+                ThreadPool.QueueUserWorkItem(ThreadProc);
+                connectBtn.Enabled = false;
             }
             catch (ArgumentNullException e)
             {
@@ -53,6 +58,9 @@ namespace csharp_client
         //send text with color and scroll textbox down
         void AppndText(string text, Color color)
         {
+            if (text.Contains('\0'))
+                text = text.Replace("\0", string.Empty);
+
             msgs.SelectionStart = msgs.TextLength;
             msgs.SelectionLength = 0;
 
@@ -70,19 +78,55 @@ namespace csharp_client
         {
             try
             {
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text); //send data
+                Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
                 stream.Write(data, 0, data.Length);
-                AppndText("CLIENT:" + sendTextbox.Text, Color.Green);
-
-                //receive
-                String responseData = String.Empty;
-                Int32 bytes = stream.Read(readBuffer, 0, readBuffer.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(readBuffer, 0, bytes);
-                AppndText("SERVER:" + responseData, Color.Blue);
             }
             catch
             {
                 AppndText("ERROR: not connected to server", Color.Red);
+                connectBtn.Enabled = true;
+            }
+        }
+
+        void ThreadProc(object obj)
+        {
+            //Console.WriteLine("[DEBUG] client connection passed to ThreadProc...");
+            String data = null;
+            int i;
+
+            try
+            {
+                Byte[] bytes = new Byte[8192];
+                List<byte> storage = new List<byte>();
+                while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
+                {
+                    //received
+                    if (i > 0)
+                        storage.AddRange(bytes.Take(i)); //store it.
+
+                    if (Array.IndexOf(bytes, (byte)0) >= 0) //done?
+                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count());
+                    else //maybe client has lag, wait for null char
+                        continue;
+
+                Invoke(new MethodInvoker(delegate
+                {
+                    AppndText(data, Color.Blue);
+                }));
+                       
+                    storage.Clear(); //empty storage
+                }
+            }
+            catch
+            {
+                Invoke(new MethodInvoker(delegate
+                {
+                    AppndText("connection died:", Color.Red);
+                }));
+                connectBtn.Invoke(new MethodInvoker(delegate
+                {
+                    connectBtn.Enabled = true;
+                }));
             }
         }
 
