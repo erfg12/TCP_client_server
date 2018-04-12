@@ -21,7 +21,7 @@ namespace csharp_client
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            Connect("127.0.0.1");
+            
         }
 
         NetworkStream stream;
@@ -38,11 +38,15 @@ namespace csharp_client
             }
             catch (ArgumentNullException e)
             {
-                Debug.WriteLine("ArgumentNullException: {0}", e);
+                AppndText("ArgumentNullException:" + e, Color.Red);
             }
             catch (SocketException e)
             {
-                Debug.WriteLine("SocketException: {0}", e);
+                AppndText("SocketException:" + e, Color.Red);
+            }
+            catch
+            {
+                AppndText("Connection failed", Color.Red);
             }
         }
 
@@ -61,37 +65,30 @@ namespace csharp_client
         }
 
         //send text from sendTextbox to TcpListener
+        Byte[] readBuffer = new Byte[8192];
         private void button1_Click(object sender, EventArgs e)
         {
-            //send
-            if (sendTextbox.Text.Length > 9999)
+            try
             {
-                AppndText("ERR: Too much txt!", Color.Red);
-                return;
-            }
+                Byte[] data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text); //send data
+                stream.Write(data, 0, data.Length);
+                AppndText("CLIENT:" + sendTextbox.Text, Color.Green);
 
-            if (sendTextbox.Text.Length < 5)
+                //receive
+                String responseData = String.Empty;
+                Int32 bytes = stream.Read(readBuffer, 0, readBuffer.Length);
+                responseData = System.Text.Encoding.ASCII.GetString(readBuffer, 0, bytes);
+                AppndText("SERVER:" + responseData, Color.Blue);
+            }
+            catch
             {
-                AppndText("ERR: Too little txt!", Color.Red);
-                return;
+                AppndText("ERROR: not connected to server", Color.Red);
             }
+        }
 
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text.Length.ToString().PadLeft(4, '0')); //alter buffer size
-            stream.Write(data, 0, data.Length);
-
-            data = System.Text.Encoding.ASCII.GetBytes(sendTextbox.Text); //send data
-            stream.Write(data, 0, data.Length);
-            AppndText("CLIENT:" + sendTextbox.Text, Color.Green);
-
-            //receive
-            String responseData = String.Empty;
-            Int32 bytes = stream.Read(data, 0, 4); //first get listen size
-            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-
-            data = new byte[Convert.ToInt32(responseData)]; //change to new size
-            bytes = stream.Read(data, 0, data.Length); //read real string
-            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-            AppndText("SERVER:" + responseData, Color.Red);
+        private void connectBtn_Click(object sender, EventArgs e)
+        {
+            Connect(ipAddrBox.Text);
         }
     }
 }

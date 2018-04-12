@@ -18,12 +18,16 @@ namespace csharp_server
             {
                 Int32 port = 13000;
                 IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+
+                if (args.Length > 0)
+                    localAddr = IPAddress.Parse(args[0]);
+                
                 server = new TcpListener(localAddr, port);
                 server.Start();
-               
+                
                 while (true)
                 {
-                    Console.WriteLine("Waiting for a connection...");
+                    //Console.WriteLine("[DEBUG] Waiting for a connection...");
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("A client has connected!");
                     ThreadPool.QueueUserWorkItem(ThreadProc, client);
@@ -40,7 +44,7 @@ namespace csharp_server
         }
         private static void ThreadProc(object obj)
         {
-            Console.WriteLine("client connection passed to ThreadProc...");
+            //Console.WriteLine("[DEBUG] client connection passed to ThreadProc...");
             String data = null;
             var client = (TcpClient)obj;
             NetworkStream stream = client.GetStream();
@@ -48,37 +52,24 @@ namespace csharp_server
 
             try
             {
-                Byte[] bytes = new Byte[4]; //start here. Big enough for size string ####
+                Byte[] bytes = new Byte[8192];
+                List<byte> storage = new List<byte>();
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     //received
-                    data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-
-                    if (i < 4) //too small
-                    {
-                        Console.WriteLine("Err: too few bytes");
+                    storage.AddRange(bytes); //store it.
+                    if (bytes.Contains((byte)0)) //done?
+                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, i);
+                    else //maybe client has lag, wait for null char
                         continue;
-                    }
-
-                    if (i == 4) //alter byte size, read msg
-                    {
-                        bytes = new byte[Convert.ToInt32(data)];
-                        continue;
-                    }
-
-                    if (i < bytes.Length) //check if we received the proper size msg
-                    {
-                        Console.WriteLine("Err: received incorrect msg size");
-                        continue;
-                    }
 
                     //for commands in the future
                     string[] args = new string[data.Length];
                     string[] cmd = new string[data.Length];
-                    if (data.Contains("|"))
+                    if (data.Contains(Char.MaxValue))
                     {
                         //Console.WriteLine("[DEBUG] Received: {0}", data);
-                        cmd = data.Split('|');
+                        cmd = data.Split(Char.MaxValue);
                         if (cmd[1].Contains(","))
                             args = cmd[1].Split(',');
                         else
@@ -90,10 +81,9 @@ namespace csharp_server
                     //send a response to client
                     Console.WriteLine("Received: {0}", data);
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes("I received your message!"); //change this later
-                    stream.Write(Encoding.ASCII.GetBytes(msg.Length.ToString().PadLeft(4, '0')), 0, 4); //send length, always 4 bytes
                     stream.Write(msg, 0, msg.Length);
 
-                    bytes = new Byte[4]; //reset
+                    storage.Clear(); //empty storage
                 }
             }
             catch
