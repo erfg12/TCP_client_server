@@ -1,4 +1,4 @@
-To communicate via SSL Stream you need to install your certificates and keys as Trusted Root.
+To communicate via SSL Stream you need the client to install your certificate and server to install p12 key/cert combo.
 
 Install OpenSSL. https://slproweb.com/products/Win32OpenSSL.html
 
@@ -8,6 +8,8 @@ Generate your private key and cert files: openssl req -x509 -newkey rsa:4096 -ke
 
 Convert pem to crt file: openssl x509 -outform der -in cert.pem -out cert.crt
 
-Generate a .p12 file, double click to install it: openssl pkcs12 -export -out keyStore.p12 -inkey key.pem -in cert.pem
+Generate a .p12 file: openssl pkcs12 -export -out keyStore.p12 -inkey key.pem -in cert.pem
 
-Open certlm.exe, right click on Trusted Root Certification Authorities > All Tasks > Import. Select cert.crt
+Server: Double click on p12 to install. Client: Double click on server.crt to install.
+
+Place cert.crt next to csharp_server.exe
