@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,8 +29,22 @@ namespace csharp_client
             
         }
 
-        NetworkStream stream;
+        SslStream stream;
         TcpClient client;
+
+        private static Hashtable certificateErrors = new Hashtable();
+
+        // The following method is invoked by the RemoteCertificateValidationDelegate.
+        public static bool ValidateServerCertificate( object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+                return true;
+
+            Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+
+            // Do not allow this client to communicate with unauthenticated servers.
+            return false;
+        }
 
         //connect to server
         void Connect(String server)
@@ -35,7 +53,25 @@ namespace csharp_client
             {
                 Int32 port = 13000;
                 client = new TcpClient(server, port);
-                stream = client.GetStream();
+
+                //stream = client.GetStream();
+                stream = new SslStream( client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null );
+                // The server name must match the name on the server certificate.
+                string serverName = "server";
+                try
+                {
+                    stream.AuthenticateAsClient(serverName);
+                }
+                catch (AuthenticationException e)
+                {
+                    Console.WriteLine("Exception: {0}", e.Message);
+                    if (e.InnerException != null)
+                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                    Console.WriteLine("Authentication failed - closing the connection.");
+                    client.Close();
+                    return;
+                }
+
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + " has connected to the server!" + '\0'); //send data
                 stream.Write(data, 0, data.Length);
                 ThreadPool.QueueUserWorkItem(ThreadProc);

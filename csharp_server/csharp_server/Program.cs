@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,8 +15,13 @@ namespace csharp_server
     class Program
     {
         static List<TcpClient> cl = new List<TcpClient>();
+        static List<SslStream> streams = new List<SslStream>();
+
+        static X509Certificate serverCertificate = null;
+
         static void Main(string[] args)
         {
+            serverCertificate = X509Certificate.CreateFromCertFile("cert.cer");
             TcpListener server = null;
             try
             {
@@ -45,10 +53,9 @@ namespace csharp_server
         }
         static void broadcast(byte[] msg)
         {
-            foreach (TcpClient n in cl)
+            foreach (SslStream n in streams)
             {
-                NetworkStream stream = n.GetStream();
-                stream.Write(msg, 0, msg.Length);
+                n.Write(msg, 0, msg.Length);
             }
         }
         private static void ThreadProc(object obj)
@@ -56,7 +63,10 @@ namespace csharp_server
             //Console.WriteLine("[DEBUG] client connection passed to ThreadProc...");
             String data = null;
             var client = (TcpClient)obj;
-            NetworkStream stream = client.GetStream();
+
+            SslStream stream = new SslStream(client.GetStream(), false);
+            //NetworkStream stream = client.GetStream(); //moving on to SSL streams
+
             cl.Add(client);
             int i;
 
@@ -64,6 +74,22 @@ namespace csharp_server
             {
                 Byte[] bytes = new Byte[8192];
                 List<byte> storage = new List<byte>();
+
+                stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls, true);
+            // Display the properties and settings for the authenticated stream.
+            //DisplaySecurityLevel(sslStream);
+            //DisplaySecurityServices(sslStream);
+            //DisplayCertificateInformation(sslStream);
+            //DisplayStreamProperties(sslStream);
+
+            streams.Add(stream);
+
+                // Set timeouts for the read and write to 5 seconds.
+                stream.ReadTimeout = 5000;
+                stream.WriteTimeout = 5000;
+
+                //stream.Write(System.Text.Encoding.ASCII.GetBytes("test msg" + '\0')); //a test msg
+
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     //received
