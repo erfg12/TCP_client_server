@@ -97,34 +97,39 @@ namespace csharp_server
                     if (beforeNull >= 0) //done
                     {
                         storage.AddRange(bytes.Take(beforeNull)); //store up to null
-                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count());
+                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
                     }
                     else
                     { //maybe client has lag, wait for null char
                         storage.AddRange(bytes.Take(i)); //store all of it.
                         continue;
                     }
-
-                    //for commands in the future
-                    string[] args = new string[data.Length];
-                    string[] cmd = new string[data.Length];
-                    if (data.Contains(Char.MaxValue))
+                    
+                    if (data.Contains("|")) //a command
                     {
-                        //Console.WriteLine("[DEBUG] Received: {0}", data);
-                        cmd = data.Split(Char.MaxValue);
+                        string[] args = new string[data.Length];
+                        string[] cmd = new string[data.Length];
+                        cmd = data.Split('|');
                         if (cmd[1].Contains(","))
                             args = cmd[1].Split(',');
                         else
                             args[0] = cmd[1];
-                        continue;
+
+                        Console.WriteLine("Received Cmd: {0}", cmd[0]);
+                        byte[] sndMsg = { 0 };
+
+                        if (cmd[0].Equals("lm")) //list members
+                            sndMsg = System.Text.Encoding.ASCII.GetBytes(streams.Count().ToString() + " client(s) currently connected." + '\0');
+
+                        stream.Write(sndMsg);
                     }
-                    //end cmds
+                    else //just a text msg
+                    {
+                        Console.WriteLine("Received Txt: {0}", data);
 
-                    //send a response to client
-                    Console.WriteLine("Received: {0}", data);
-
-                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(data + '\0');
-                    broadcast(msg);
+                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(data + '\0');
+                        broadcast(msg);
+                    }
 
                     storage.Clear(); //empty storage
 

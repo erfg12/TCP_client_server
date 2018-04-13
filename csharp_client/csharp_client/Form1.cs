@@ -76,6 +76,9 @@ namespace csharp_client
                 stream.Write(data, 0, data.Length);
                 ThreadPool.QueueUserWorkItem(ThreadProc);
                 connectBtn.Enabled = false;
+
+                data = System.Text.Encoding.ASCII.GetBytes("lm|" + '\0'); //send data
+                stream.Write(data, 0, data.Length);
             }
             catch (ArgumentNullException e)
             {
@@ -110,10 +113,12 @@ namespace csharp_client
 
         //send text from sendTextbox to TcpListener
         Byte[] readBuffer = new Byte[8192];
-        private void button1_Click(object sender, EventArgs e)
+        private void sndMsg_Click(object sender, EventArgs e)
         {
             try
             {
+                if (sendTextbox.Text.Contains("|"))
+                    sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
                 stream.Write(data, 0, data.Length);
             }
