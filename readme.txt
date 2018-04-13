@@ -1,10 +1,10 @@
-To communicate via SSL Stream you need the client to install your certificate and server to install p12 key/cert combo.
+To communicate via SSL Stream, clients install your certificate and server to install p12 key/cert combo.
 
 Install OpenSSL. https://slproweb.com/products/Win32OpenSSL.html
 
 Copy openssl.cnf to C:\Program Files\Common Files\SSL/openssl.cnf
 
-Generate your private key and cert files: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+Generate your pem files: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 
 Convert pem to crt file: openssl x509 -outform der -in cert.pem -out cert.crt
 
