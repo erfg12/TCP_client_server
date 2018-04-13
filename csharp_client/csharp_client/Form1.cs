@@ -55,7 +55,7 @@ namespace csharp_client
                 client = new TcpClient(server, port);
 
                 //stream = client.GetStream();
-                stream = new SslStream( client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null );
+                stream = new SslStream( client.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate), null );
                 // The server name must match the name on the server certificate.
                 string serverName = "server";
                 try

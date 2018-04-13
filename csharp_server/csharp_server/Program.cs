@@ -76,17 +76,17 @@ namespace csharp_server
                 List<byte> storage = new List<byte>();
 
                 stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls, true);
-            // Display the properties and settings for the authenticated stream.
-            //DisplaySecurityLevel(sslStream);
-            //DisplaySecurityServices(sslStream);
-            //DisplayCertificateInformation(sslStream);
-            //DisplayStreamProperties(sslStream);
+                // Display the properties and settings for the authenticated stream.
+                //DisplaySecurityLevel(sslStream);
+                //DisplaySecurityServices(sslStream);
+                //DisplayCertificateInformation(sslStream);
+                //DisplayStreamProperties(sslStream);
 
-            streams.Add(stream);
+                streams.Add(stream);
 
-                // Set timeouts for the read and write to 5 seconds.
-                stream.ReadTimeout = 5000;
-                stream.WriteTimeout = 5000;
+                // Set timeouts for the read and write to 10 minutes.
+                stream.ReadTimeout = 600000;
+                stream.WriteTimeout = 600000;
 
                 //stream.Write(System.Text.Encoding.ASCII.GetBytes("test msg" + '\0')); //a test msg
 
@@ -138,7 +138,7 @@ namespace csharp_server
             }
             catch
             {
-                Console.WriteLine("client has left");
+                Console.WriteLine("A client has left");
                 client.Close();
             }
         }
