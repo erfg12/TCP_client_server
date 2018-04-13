@@ -116,6 +116,7 @@ namespace csharp_client
                     //for commands in the future
                     string[] args = new string[data.Length];
                     string[] cmd = new string[data.Length];
+                    if (data.Contains(Char.MaxValue))
                     {
                         //Console.WriteLine("[DEBUG] Received: {0}", data);
                         cmd = data.Split(Char.MaxValue);
