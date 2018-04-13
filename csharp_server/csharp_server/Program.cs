@@ -11,7 +11,7 @@ namespace csharp_server
 {
     class Program
     {
-        static List<NetworkStream> cl = new List<NetworkStream>();
+        static List<TcpClient> cl = new List<TcpClient>();
         static void Main(string[] args)
         {
             TcpListener server = null;
@@ -45,9 +45,10 @@ namespace csharp_server
         }
         static void broadcast(byte[] msg)
         {
-            foreach (NetworkStream n in cl)
+            foreach (TcpClient n in cl)
             {
-                n.Write(msg, 0, msg.Length);
+                NetworkStream stream = n.GetStream();
+                stream.Write(msg, 0, msg.Length);
             }
         }
         private static void ThreadProc(object obj)
@@ -56,7 +57,7 @@ namespace csharp_server
             String data = null;
             var client = (TcpClient)obj;
             NetworkStream stream = client.GetStream();
-            cl.Add(stream);
+            cl.Add(client);
             int i;
 
             try
@@ -66,13 +67,17 @@ namespace csharp_server
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     //received
-                    if (i > 0)
-                        storage.AddRange(bytes.Take(i)); //store it.
-                    
-                    if (Array.IndexOf(bytes.Take(i).ToArray(), (byte)0) >= 0) //done?
+                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
+                    if (beforeNull >= 0) //done
+                    {
+                        storage.AddRange(bytes.Take(beforeNull)); //store up to null
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count());
-                    else //maybe client has lag, wait for null char
+                    }
+                    else
+                    { //maybe client has lag, wait for null char
+                        storage.AddRange(bytes.Take(i)); //store all of it.
                         continue;
+                    }
 
                     //for commands in the future
                     string[] args = new string[data.Length];
@@ -92,11 +97,17 @@ namespace csharp_server
                     //send a response to client
                     Console.WriteLine("Received: {0}", data);
 
-                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(data); //change this later
+                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(data + '\0');
                     broadcast(msg);
-                    //stream.Write(msg, 0, msg.Length);
 
                     storage.Clear(); //empty storage
+
+                    // if the bytes are greater than beforenull, store the rest
+                    if (bytes.Take(i).ToArray().Length - 1 > beforeNull)
+                    {
+                        Console.WriteLine("[DEBUG] leftover bytes in wire (bytes=" + (bytes.Take(i).ToArray().Length - 1) + " before=" + beforeNull);
+                        storage.AddRange(bytes.Skip(i));
+                    }
                 }
             }
             catch

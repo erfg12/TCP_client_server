@@ -101,20 +101,45 @@ namespace csharp_client
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
                     //received
-                    if (i > 0)
-                        storage.AddRange(bytes.Take(i)); //store it.
-
-                    if (Array.IndexOf(bytes, (byte)0) >= 0) //done?
+                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
+                    if (beforeNull >= 0) //done
+                    {
+                        storage.AddRange(bytes.Take(beforeNull)); //store up to null
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count());
-                    else //maybe client has lag, wait for null char
+                    }
+                    else
+                    { //maybe client has lag, wait for null char
+                        storage.AddRange(bytes.Take(i)); //store all of it.
                         continue;
+                    }
 
-                Invoke(new MethodInvoker(delegate
-                {
-                    AppndText(data, Color.Blue);
-                }));
-                       
+                    //for commands in the future
+                    string[] args = new string[data.Length];
+                    string[] cmd = new string[data.Length];
+                    {
+                        //Console.WriteLine("[DEBUG] Received: {0}", data);
+                        cmd = data.Split(Char.MaxValue);
+                        if (cmd[1].Contains(","))
+                            args = cmd[1].Split(',');
+                        else
+                            args[0] = cmd[1];
+                        continue;
+                    }
+                    //end cmds
+
+                    Invoke(new MethodInvoker(delegate
+                    {
+                        AppndText(data, Color.Blue);
+                    }));
+
                     storage.Clear(); //empty storage
+
+                    // if the bytes are greater than beforenull, store the rest
+                    if (bytes.Take(i).ToArray().Length - 1 > beforeNull)
+                    {
+                        Console.WriteLine("[DEBUG] leftover bytes in wire (bytes=" + (bytes.Take(i).ToArray().Length - 1) + " before=" + beforeNull);
+                        storage.AddRange(bytes.Skip(i));
+                    }
                 }
             }
             catch
