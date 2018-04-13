@@ -1,4 +1,4 @@
-To communicate via SSL Stream, clients install your certificate and server to install p12 key/cert combo.
+To communicate via SSL Stream, clients install your certificate and server installs p12 file.
 
 Install OpenSSL. https://slproweb.com/products/Win32OpenSSL.html
 
@@ -10,6 +10,6 @@ Convert pem to crt file: openssl x509 -outform der -in cert.pem -out cert.crt
 
 Generate a .p12 file: openssl pkcs12 -export -out keyStore.p12 -inkey key.pem -in cert.pem
 
-Server: Double click on p12 to install. Client: Double click on server.crt to install.
+Server: Double click on p12 to install. Client: Double click on cert.crt to install.
 
 Place cert.crt next to csharp_server.exe
