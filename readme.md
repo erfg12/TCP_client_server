@@ -12,13 +12,17 @@ To communicate via SSL Stream, clients install your certificate and server insta
 
 Install OpenSSL. https://slproweb.com/products/Win32OpenSSL.html
 
-Open cmd prompt, type: setx OPENSSL_CONF "c:\OpenSSL-Win64\bin\openssl.cnf"
+Open cmd prompt, type: 
 
-Also, type: setx RANDFILE "c:\OpenSSL-Win64\bin\.rnd"
+set OPENSSL_CONF=c:\OpenSSL-Win64\bin\openssl.cfg
 
-Make openssl.cnf file in bin directory. Use this as your template:
+setx OPENSSL_CONF "c:\OpenSSL-Win64\bin\openssl.cfg"
 
-https://gist.github.com/pandurang90/dbe6a67339747ef5bacf
+Also, type: 
+
+set RANDFILE=c:\OpenSSL-Win64\bin\.rnd
+
+setx RANDFILE "c:\OpenSSL-Win64\bin\.rnd"
 
 Generate your pem files: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 
