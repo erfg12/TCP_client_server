@@ -36,6 +36,9 @@
             this.connectBtn = new System.Windows.Forms.Button();
             this.nameBox = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.useSSL = new System.Windows.Forms.CheckBox();
+            this.portBox = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // sendBtn
@@ -67,9 +70,9 @@
             // 
             // ipAddrBox
             // 
-            this.ipAddrBox.Location = new System.Drawing.Point(218, 10);
+            this.ipAddrBox.Location = new System.Drawing.Point(174, 10);
             this.ipAddrBox.Name = "ipAddrBox";
-            this.ipAddrBox.Size = new System.Drawing.Size(119, 20);
+            this.ipAddrBox.Size = new System.Drawing.Size(74, 20);
             this.ipAddrBox.TabIndex = 4;
             this.ipAddrBox.Text = "127.0.0.1";
             // 
@@ -78,15 +81,15 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(154, 13);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(61, 13);
+            this.label1.Size = new System.Drawing.Size(20, 13);
             this.label1.TabIndex = 5;
-            this.label1.Text = "IP Address:";
+            this.label1.Text = "IP:";
             // 
             // connectBtn
             // 
-            this.connectBtn.Location = new System.Drawing.Point(344, 8);
+            this.connectBtn.Location = new System.Drawing.Point(308, 9);
             this.connectBtn.Name = "connectBtn";
-            this.connectBtn.Size = new System.Drawing.Size(75, 23);
+            this.connectBtn.Size = new System.Drawing.Size(56, 23);
             this.connectBtn.TabIndex = 6;
             this.connectBtn.Text = "connect";
             this.connectBtn.UseVisualStyleBackColor = true;
@@ -94,7 +97,7 @@
             // 
             // nameBox
             // 
-            this.nameBox.Location = new System.Drawing.Point(51, 10);
+            this.nameBox.Location = new System.Drawing.Point(49, 10);
             this.nameBox.Name = "nameBox";
             this.nameBox.Size = new System.Drawing.Size(100, 20);
             this.nameBox.TabIndex = 7;
@@ -109,11 +112,41 @@
             this.label2.TabIndex = 8;
             this.label2.Text = "name:";
             // 
+            // useSSL
+            // 
+            this.useSSL.AutoSize = true;
+            this.useSSL.Location = new System.Drawing.Point(378, 13);
+            this.useSSL.Name = "useSSL";
+            this.useSSL.Size = new System.Drawing.Size(46, 17);
+            this.useSSL.TabIndex = 9;
+            this.useSSL.Text = "SSL";
+            this.useSSL.UseVisualStyleBackColor = true;
+            // 
+            // portBox
+            // 
+            this.portBox.Location = new System.Drawing.Point(258, 10);
+            this.portBox.Name = "portBox";
+            this.portBox.Size = new System.Drawing.Size(48, 20);
+            this.portBox.TabIndex = 10;
+            this.portBox.Text = "13000";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(248, 13);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(10, 13);
+            this.label3.TabIndex = 11;
+            this.label3.Text = ":";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(434, 450);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.portBox);
+            this.Controls.Add(this.useSSL);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.nameBox);
             this.Controls.Add(this.connectBtn);
@@ -140,6 +173,9 @@
         private System.Windows.Forms.Button connectBtn;
         private System.Windows.Forms.TextBox nameBox;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox useSSL;
+        private System.Windows.Forms.TextBox portBox;
+        private System.Windows.Forms.Label label3;
     }
 }
 

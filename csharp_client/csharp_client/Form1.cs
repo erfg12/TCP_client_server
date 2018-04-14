@@ -28,8 +28,9 @@ namespace csharp_client
         {
             
         }
-
+        
         SslStream stream;
+        NetworkStream nStream;
         TcpClient client;
 
         private static Hashtable certificateErrors = new Hashtable();
@@ -47,38 +48,44 @@ namespace csharp_client
         }
 
         //connect to server
-        void Connect(String server)
+        void Connect(String server, String port)
         {
             try
             {
-                Int32 port = 13000;
-                client = new TcpClient(server, port);
-
-                //stream = client.GetStream();
-                stream = new SslStream( client.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate), null );
-                // The server name must match the name on the server certificate.
-                string serverName = "server";
-                try
-                {
-                    stream.AuthenticateAsClient(serverName);
-                }
-                catch (AuthenticationException e)
-                {
-                    Console.WriteLine("Exception: {0}", e.Message);
-                    if (e.InnerException != null)
-                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
-                    Console.WriteLine("Authentication failed - closing the connection.");
-                    client.Close();
-                    return;
-                }
+                client = new TcpClient(server, Convert.ToInt32(port));
 
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + " has connected to the server!" + '\0'); //send data
-                stream.Write(data, 0, data.Length);
-                ThreadPool.QueueUserWorkItem(ThreadProc);
+                Byte[] listMembers = System.Text.Encoding.ASCII.GetBytes("lm|" + '\0'); //send data
                 connectBtn.Enabled = false;
 
-                data = System.Text.Encoding.ASCII.GetBytes("lm|" + '\0'); //send data
-                stream.Write(data, 0, data.Length);
+                if (useSSL.Checked) {
+                    stream = new SslStream(client.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+                    // The server name must match the name on the server certificate.
+                    string serverName = "server";
+                    try
+                    {
+                        stream.AuthenticateAsClient(serverName);
+                    }
+                    catch (AuthenticationException e)
+                    {
+                        Console.WriteLine("Exception: {0}", e.Message);
+                        if (e.InnerException != null)
+                            Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                        Console.WriteLine("Authentication failed - closing the connection.");
+                        client.Close();
+                        return;
+                    }
+                    ThreadPool.QueueUserWorkItem(ThreadProc); //start listening
+                    stream.Write(data, 0, data.Length);
+                    stream.Write(listMembers, 0, listMembers.Length);
+                }
+                else
+                {
+                    nStream = client.GetStream();
+                    ThreadPool.QueueUserWorkItem(ThreadProc); //start listening
+                    nStream.Write(data, 0, data.Length);                    
+                    nStream.Write(listMembers, 0, listMembers.Length);
+                }
             }
             catch (ArgumentNullException e)
             {
@@ -120,7 +127,10 @@ namespace csharp_client
                 if (sendTextbox.Text.Contains("|"))
                     sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
-                stream.Write(data, 0, data.Length);
+                if (useSSL.Checked)
+                    stream.Write(data, 0, data.Length);
+                else
+                    nStream.Write(data, 0, data.Length);
             }
             catch
             {
@@ -139,7 +149,7 @@ namespace csharp_client
             {
                 Byte[] bytes = new Byte[8192];
                 List<byte> storage = new List<byte>();
-                while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
+                while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && useSSL.Checked) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !useSSL.Checked))
                 {
                     //received
                     int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
@@ -199,7 +209,7 @@ namespace csharp_client
 
         private void connectBtn_Click(object sender, EventArgs e)
         {
-            Connect(ipAddrBox.Text);
+            Connect(ipAddrBox.Text, portBox.Text);
         }
     }
 }

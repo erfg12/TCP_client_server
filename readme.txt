@@ -1,3 +1,13 @@
+## TCP Server and Client
+
+Simple TCP terminal server and winforms client example code.
+
+Server has 3 optional args. <IP> <PORT> <SSL>
+
+_Ex: csharp_server 192.168.1.20 5600 true_
+
+## How to Setup SSL Communication
+
 To communicate via SSL Stream, clients install your certificate and server installs p12 file.
 
 Install OpenSSL. https://slproweb.com/products/Win32OpenSSL.html

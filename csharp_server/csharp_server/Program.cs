@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
@@ -15,13 +16,21 @@ namespace csharp_server
     class Program
     {
         static List<TcpClient> cl = new List<TcpClient>();
+        static Boolean ssl = false;
         static List<SslStream> streams = new List<SslStream>();
-
+        static List<NetworkStream> nStreams = new List<NetworkStream>();
         static X509Certificate serverCertificate = null;
 
         static void Main(string[] args)
         {
-            serverCertificate = X509Certificate.CreateFromCertFile("cert.cer");
+            if (File.Exists("cert.cer"))
+                serverCertificate = X509Certificate.CreateFromCertFile("cert.cer");
+            else
+            {
+                Console.WriteLine("ERROR: cert.cer file missing! Place cert.cer next to csharp_server.exe file.");
+                return;
+            }
+
             TcpListener server = null;
             try
             {
@@ -30,6 +39,17 @@ namespace csharp_server
 
                 if (args.Length > 0)
                     localAddr = IPAddress.Parse(args[0]);
+
+                if (args.Length >= 1)
+                    port = Convert.ToInt32(args[1]);
+
+                if (args.Length >= 2)
+                {
+                    if (args[2].ToLower().Equals("ssl") || args[2].ToLower().Equals("true") || args[2].Equals("1"))
+                        ssl = true;
+                }
+
+                Console.WriteLine("server is listening on IP:" + localAddr.ToString() + " Port:" + port + " SSL:" + ssl);
                 
                 server = new TcpListener(localAddr, port);
                 server.Start();
@@ -53,19 +73,71 @@ namespace csharp_server
         }
         static void broadcast(byte[] msg)
         {
-            foreach (SslStream n in streams)
+            if (ssl)
             {
-                n.Write(msg, 0, msg.Length);
+                foreach (SslStream n in streams)
+                {
+                    n.Write(msg);
+                }
+            }
+            else
+            {
+                foreach (NetworkStream n in nStreams)
+                {
+                    n.Write(msg, 0, msg.Length);
+                }
             }
         }
+
+        private static void ProcessMsg(NetworkStream nStream, SslStream stream, string data)
+        {
+            if (data.Contains("|")) //a command
+            {
+                string[] args = new string[data.Length];
+                string[] cmd = new string[data.Length];
+                cmd = data.Split('|');
+                if (cmd[1].Contains(","))
+                    args = cmd[1].Split(',');
+                else
+                    args[0] = cmd[1];
+
+                Console.WriteLine("Received Cmd: {0}", cmd[0]);
+                byte[] sndMsg = { 0 };
+
+                if (cmd[0].Equals("lm"))
+                { //list members
+                    if (ssl)
+                        sndMsg = System.Text.Encoding.ASCII.GetBytes(streams.Count().ToString() + " client(s) currently connected." + '\0');
+                    else
+                        sndMsg = System.Text.Encoding.ASCII.GetBytes(nStreams.Count().ToString() + " client(s) currently connected." + '\0');
+                }
+
+                if (ssl)
+                    stream.Write(sndMsg);
+                else
+                    nStream.Write(sndMsg, 0, sndMsg.Length);
+            }
+            else //just a text msg
+            {
+                Console.WriteLine("Received Txt: {0}", data);
+
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
+                broadcast(msg);
+            }
+        }
+
         private static void ThreadProc(object obj)
         {
             //Console.WriteLine("[DEBUG] client connection passed to ThreadProc...");
             String data = null;
             var client = (TcpClient)obj;
+            SslStream stream = null;
+            NetworkStream nStream = null;
 
-            SslStream stream = new SslStream(client.GetStream(), false);
-            //NetworkStream stream = client.GetStream(); //moving on to SSL streams
+            if (ssl)
+                stream = new SslStream(client.GetStream(), false);
+            else
+                nStream = client.GetStream(); //moving on to SSL streams
 
             cl.Add(client);
             int i;
@@ -75,69 +147,55 @@ namespace csharp_server
                 Byte[] bytes = new Byte[8192];
                 List<byte> storage = new List<byte>();
 
-                stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls, true);
-                // Display the properties and settings for the authenticated stream.
-                //DisplaySecurityLevel(sslStream);
-                //DisplaySecurityServices(sslStream);
-                //DisplayCertificateInformation(sslStream);
-                //DisplayStreamProperties(sslStream);
-
-                streams.Add(stream);
-
-                // Set timeouts for the read and write to 10 minutes.
-                stream.ReadTimeout = 600000;
-                stream.WriteTimeout = 600000;
-
-                //stream.Write(System.Text.Encoding.ASCII.GetBytes("test msg" + '\0')); //a test msg
-
-                while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
+                if (ssl)
                 {
-                    //received
-                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
-                    if (beforeNull >= 0) //done
+                    stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls, true);
+                    // Display the properties and settings for the authenticated stream.
+                    //DisplaySecurityLevel(sslStream);
+                    //DisplaySecurityServices(sslStream);
+                    //DisplayCertificateInformation(sslStream);
+                    //DisplayStreamProperties(sslStream);
+                    streams.Add(stream);
+                    stream.ReadTimeout = 600000;
+                    stream.WriteTimeout = 600000;
+                }
+                else
+                {
+                    nStreams.Add(nStream);
+                    nStream.ReadTimeout = 600000;
+                    nStream.WriteTimeout = 600000;
+                }
+
+                while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && ssl) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !ssl))
+                {
+                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0) + 1;
+                    int bal = i; //byte array length
+                    int prevNull = 0;
+                    // if the bytes are greater than beforenull, process what's left
+                    while (bal >= beforeNull)
                     {
-                        storage.AddRange(bytes.Take(beforeNull)); //store up to null
+                        //Console.WriteLine("[DEBUG] bytes=" + bal + " beforeNull=" + beforeNull);                        
+                        storage.AddRange(bytes.Skip(prevNull).Take(beforeNull)); //store up to null
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
-                    }
-                    else
-                    { //maybe client has lag, wait for null char
-                        storage.AddRange(bytes.Take(i)); //store all of it.
-                        continue;
-                    }
-                    
-                    if (data.Contains("|")) //a command
-                    {
-                        string[] args = new string[data.Length];
-                        string[] cmd = new string[data.Length];
-                        cmd = data.Split('|');
-                        if (cmd[1].Contains(","))
-                            args = cmd[1].Split(',');
-                        else
-                            args[0] = cmd[1];
+                        int tmpStore = beforeNull;
+                        beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
+                        bal = bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the streawm
+                        prevNull = tmpStore;
 
-                        Console.WriteLine("Received Cmd: {0}", cmd[0]);
-                        byte[] sndMsg = { 0 };
+                        ProcessMsg(nStream, stream, data);
+                        storage.Clear(); //empty storage
 
-                        if (cmd[0].Equals("lm")) //list members
-                            sndMsg = System.Text.Encoding.ASCII.GetBytes(streams.Count().ToString() + " client(s) currently connected." + '\0');
-
-                        stream.Write(sndMsg);
-                    }
-                    else //just a text msg
-                    {
-                        Console.WriteLine("Received Txt: {0}", data);
-
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(data + '\0');
-                        broadcast(msg);
-                    }
-
-                    storage.Clear(); //empty storage
-
-                    // if the bytes are greater than beforenull, store the rest
-                    if (bytes.Take(i).ToArray().Length - 1 > beforeNull)
-                    {
-                        Console.WriteLine("[DEBUG] leftover bytes in wire (bytes=" + (bytes.Take(i).ToArray().Length - 1) + " before=" + beforeNull);
-                        storage.AddRange(bytes.Skip(i));
+                        if (beforeNull < 0 || bal == 0) //no more nulls in stream
+                        {
+                            if (bal > 0)
+                                storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
+                            if (ssl)
+                                stream.Flush();
+                            else
+                                nStream.Flush();
+                            Array.Clear(bytes, 0, bytes.Length);
+                            break;
+                        }
                     }
                 }
             }
