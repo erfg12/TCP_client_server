@@ -2,7 +2,7 @@
 
 Simple TCP terminal server and winforms client example code.
 
-Server has 3 optional args. <IP> <PORT> <SSL>
+Server has 3 optional args. `<IP> <PORT> <SSL>`
 
 _Ex: csharp_server 192.168.1.20 5600 true_
 
