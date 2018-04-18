@@ -18,7 +18,7 @@ namespace csharp_server
         static List<TcpClient> cl = new List<TcpClient>();
         static Boolean ssl = false;
         static List<SslStream> streams = new List<SslStream>();
-        static List<NetworkStream> nStreams = new List<NetworkStream>();
+        //static List<TcpClient> nStreams = new List<TcpClient>();
         static X509Certificate serverCertificate = null;
 
         static void Main(string[] args)
@@ -81,9 +81,12 @@ namespace csharp_server
             }
             else
             {
-                foreach (NetworkStream n in nStreams)
+                foreach (TcpClient n in cl)
                 {
-                    n.Write(msg, 0, msg.Length);
+                    NetworkStream tes = n.GetStream();
+                    tes.Write(msg, 0, msg.Length);
+                    //tes.ReadTimeout = 600000;
+                    //tes.WriteTimeout = 600000;
                 }
             }
         }
@@ -108,13 +111,18 @@ namespace csharp_server
                     if (ssl)
                         sndMsg = System.Text.Encoding.ASCII.GetBytes(streams.Count().ToString() + " client(s) currently connected." + '\0');
                     else
-                        sndMsg = System.Text.Encoding.ASCII.GetBytes(nStreams.Count().ToString() + " client(s) currently connected." + '\0');
+                    {
+                        sndMsg = System.Text.Encoding.ASCII.GetBytes(cl.Count().ToString() + " client(s) currently connected." + '\0');
+                    }
                 }
 
                 if (ssl)
                     stream.Write(sndMsg);
                 else
+                {
+                    //NetworkStream tes = cl.GetStream();
                     nStream.Write(sndMsg, 0, sndMsg.Length);
+                }
             }
             else //just a text msg
             {
@@ -158,12 +166,10 @@ namespace csharp_server
                     stream.ReadTimeout = 600000;
                     stream.WriteTimeout = 600000;
                 }
-                else
+                /*else
                 {
-                    nStreams.Add(nStream);
-                    nStream.ReadTimeout = 600000;
-                    nStream.WriteTimeout = 600000;
-                }
+                    nStreams.Add(client);
+                }*/
 
                 while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && ssl) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !ssl))
                 {
@@ -202,6 +208,11 @@ namespace csharp_server
             {
                 Console.WriteLine("A client has left");
                 client.Close();
+                cl.Remove(client);
+                if (stream != null)
+                    stream.Close();
+                if (nStream != null)
+                    nStream.Close();
             }
         }
     }
