@@ -23,14 +23,6 @@ namespace csharp_server
 
         static void Main(string[] args)
         {
-            if (File.Exists("cert.cer"))
-                serverCertificate = X509Certificate.CreateFromCertFile("cert.cer");
-            else
-            {
-                Console.WriteLine("ERROR: cert.cer file missing! Place cert.cer next to csharp_server.exe file.");
-                return;
-            }
-
             TcpListener server = null;
             try
             {
@@ -47,6 +39,13 @@ namespace csharp_server
                 {
                     if (args[2].ToLower().Equals("ssl") || args[2].ToLower().Equals("true") || args[2].Equals("1"))
                         ssl = true;
+                    if (File.Exists("cert.cer"))
+                        serverCertificate = X509Certificate.CreateFromCertFile("cert.cer");
+                    else
+                    {
+                        Console.WriteLine("ERROR: cert.cer file missing! Place cert.cer next to csharp_server.exe file.");
+                        return;
+                    }
                 }
 
                 Console.WriteLine("server is listening on IP:" + localAddr.ToString() + " Port:" + port + " SSL:" + ssl);
