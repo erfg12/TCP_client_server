@@ -161,13 +161,15 @@ namespace csharp_client
                     // if the bytes are greater than beforenull, process what's left
                     while (bal >= beforeNull)
                     {
-                        //Console.WriteLine("[DEBUG] bytes=" + bal + " beforeNull=" + beforeNull);                        
+                        Console.WriteLine("[DEBUG] bytes=" + bal + " beforeNull=" + beforeNull);                        
                         storage.AddRange(bytes.Skip(prevNull).Take(beforeNull)); //store up to null
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
                         int tmpStore = beforeNull;
                         beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
                         bal = bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the streawm
                         prevNull = tmpStore;
+
+                        Console.WriteLine("[DEBUG] storage=" + System.Text.Encoding.Default.GetString(storage.ToArray()));
                         
                         Invoke(new MethodInvoker(delegate
                         {
@@ -175,17 +177,22 @@ namespace csharp_client
                         }));
                         storage.Clear(); //empty storage
 
-                        if (beforeNull < 0 || bal == 0) //no more nulls in stream
-                        {
+                        //if (beforeNull < 0 || bal == 0) //no more nulls in stream
+                        //{
+                        Console.WriteLine("[DEBUG] bal=" + bal.ToString());
                             if (bal > 0)
+                            {
                                 storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
+                                Console.WriteLine("[DEBUG] new storage=" + System.Text.Encoding.Default.GetString(storage.ToArray()));
+                            }
                             if (useSSL.Checked)
                                 stream.Flush();
                             else
                                 nStream.Flush();
+                            Console.WriteLine("[DEBUG] clearing bytes=" + System.Text.Encoding.Default.GetString(bytes));
                             Array.Clear(bytes, 0, bytes.Length);
                             break;
-                        }
+                        //}
                     }
                     /*int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
                     if (beforeNull >= 0) //done

@@ -130,7 +130,7 @@ namespace csharp_server
             {
                 Console.WriteLine("Received Txt: {0}", data);
 
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(data + '\0');
                 broadcast(msg);
             }
         }
