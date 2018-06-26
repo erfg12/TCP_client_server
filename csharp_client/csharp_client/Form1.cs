@@ -26,7 +26,7 @@ namespace csharp_client
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+            ipAddrBox.Text = Properties.Settings.Default.ipAddr;
         }
         
         SslStream stream;
@@ -83,7 +83,7 @@ namespace csharp_client
                 {
                     nStream = client.GetStream();
                     ThreadPool.QueueUserWorkItem(ThreadProc); //start listening
-                    nStream.Write(data, 0, data.Length);                    
+                    nStream.Write(data, 0, data.Length);
                     nStream.Write(listMembers, 0, listMembers.Length);
                 }
             }
@@ -124,13 +124,16 @@ namespace csharp_client
         {
             try
             {
-                if (sendTextbox.Text.Contains("|"))
-                    sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
-                if (useSSL.Checked)
-                    stream.Write(data, 0, data.Length);
-                else
-                    nStream.Write(data, 0, data.Length);
+                 //if (!backgroundWorker1.IsBusy) //flood test
+                 //   backgroundWorker1.RunWorkerAsync();
+
+                    if (sendTextbox.Text.Contains("|"))
+                        sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
+                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
+                    if (useSSL.Checked)
+                        stream.Write(data, 0, data.Length);
+                    else
+                        nStream.Write(data, 0, data.Length);
             }
             catch
             {
@@ -152,7 +155,39 @@ namespace csharp_client
                 while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && useSSL.Checked) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !useSSL.Checked))
                 {
                     //received
-                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
+                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0) + 1;
+                    int bal = i; //byte array length
+                    int prevNull = 0;
+                    // if the bytes are greater than beforenull, process what's left
+                    while (bal >= beforeNull)
+                    {
+                        //Console.WriteLine("[DEBUG] bytes=" + bal + " beforeNull=" + beforeNull);                        
+                        storage.AddRange(bytes.Skip(prevNull).Take(beforeNull)); //store up to null
+                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
+                        int tmpStore = beforeNull;
+                        beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
+                        bal = bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the streawm
+                        prevNull = tmpStore;
+                        
+                        Invoke(new MethodInvoker(delegate
+                        {
+                            AppndText(data, Color.Blue);
+                        }));
+                        storage.Clear(); //empty storage
+
+                        if (beforeNull < 0 || bal == 0) //no more nulls in stream
+                        {
+                            if (bal > 0)
+                                storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
+                            if (useSSL.Checked)
+                                stream.Flush();
+                            else
+                                nStream.Flush();
+                            Array.Clear(bytes, 0, bytes.Length);
+                            break;
+                        }
+                    }
+                    /*int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
                     if (beforeNull >= 0) //done
                     {
                         storage.AddRange(bytes.Take(beforeNull)); //store up to null
@@ -191,7 +226,7 @@ namespace csharp_client
                     {
                         Console.WriteLine("[DEBUG] leftover bytes in wire (bytes=" + (bytes.Take(i).ToArray().Length - 1) + " before=" + beforeNull);
                         storage.AddRange(bytes.Skip(i));
-                    }
+                    }*/
                 }
             }
             catch
@@ -210,6 +245,30 @@ namespace csharp_client
         private void connectBtn_Click(object sender, EventArgs e)
         {
             Connect(ipAddrBox.Text, portBox.Text);
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (true)
+            {
+                try
+                {
+                    if (sendTextbox.Text.Contains("|"))
+                        sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
+                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
+                    if (useSSL.Checked)
+                        stream.Write(data, 0, data.Length);
+                    else
+                        nStream.Write(data, 0, data.Length);
+                }
+                catch { }
+            }
+        }
+
+        private void ipAddrBox_TextChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.ipAddr = ipAddrBox.Text;
+            Properties.Settings.Default.Save();
         }
     }
 }

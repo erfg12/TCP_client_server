@@ -39,6 +39,7 @@
             this.useSSL = new System.Windows.Forms.CheckBox();
             this.portBox = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.SuspendLayout();
             // 
             // sendBtn
@@ -75,6 +76,7 @@
             this.ipAddrBox.Size = new System.Drawing.Size(74, 20);
             this.ipAddrBox.TabIndex = 4;
             this.ipAddrBox.Text = "127.0.0.1";
+            this.ipAddrBox.TextChanged += new System.EventHandler(this.ipAddrBox_TextChanged);
             // 
             // label1
             // 
@@ -139,6 +141,10 @@
             this.label3.TabIndex = 11;
             this.label3.Text = ":";
             // 
+            // backgroundWorker1
+            // 
+            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -176,6 +182,7 @@
         private System.Windows.Forms.CheckBox useSSL;
         private System.Windows.Forms.TextBox portBox;
         private System.Windows.Forms.Label label3;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
     }
 }
 

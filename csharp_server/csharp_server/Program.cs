@@ -116,6 +116,8 @@ namespace csharp_server
                     }
                 }
 
+                Console.WriteLine("Sending: {0}", System.Text.Encoding.Default.GetString(sndMsg));
+
                 if (ssl)
                     stream.Write(sndMsg);
                 else
