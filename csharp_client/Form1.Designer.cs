@@ -44,6 +44,8 @@
             // 
             // sendBtn
             // 
+            this.sendBtn.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.sendBtn.Location = new System.Drawing.Point(370, 415);
             this.sendBtn.Name = "sendBtn";
             this.sendBtn.Size = new System.Drawing.Size(49, 23);
@@ -54,6 +56,9 @@
             // 
             // msgs
             // 
+            this.msgs.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.msgs.Location = new System.Drawing.Point(12, 37);
             this.msgs.Name = "msgs";
             this.msgs.Size = new System.Drawing.Size(407, 372);
@@ -62,6 +67,8 @@
             // 
             // sendTextbox
             // 
+            this.sendTextbox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.sendTextbox.Location = new System.Drawing.Point(12, 417);
             this.sendTextbox.MaxLength = 2048;
             this.sendTextbox.Name = "sendTextbox";
@@ -161,8 +168,9 @@
             this.Controls.Add(this.sendTextbox);
             this.Controls.Add(this.msgs);
             this.Controls.Add(this.sendBtn);
+            this.MinimumSize = new System.Drawing.Size(450, 250);
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "TCP Client";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

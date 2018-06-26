@@ -129,8 +129,11 @@ namespace csharp_server
             else //just a text msg
             {
                 Console.WriteLine("Received Txt: {0}", data);
+                byte[] msg = null;
 
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(data + '\0');
+                if (data.Contains('\0')) //if not, this wasn't the end of the msg
+                    msg = System.Text.Encoding.ASCII.GetBytes(data);
+
                 broadcast(msg);
             }
         }
@@ -186,14 +189,14 @@ namespace csharp_server
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
                         int tmpStore = beforeNull;
                         beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
-                        bal = bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the streawm
+                        bal = (bal - tmpStore); //bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the streawm
                         prevNull = tmpStore;
 
                         ProcessMsg(nStream, stream, data);
                         storage.Clear(); //empty storage
 
-                        if (beforeNull < 0 || bal == 0) //no more nulls in stream
-                        {
+                        //if (beforeNull < 0 || bal == 0) //no more nulls in stream
+                        //{
                             if (bal > 0)
                                 storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
                             if (ssl)
@@ -201,8 +204,9 @@ namespace csharp_server
                             else
                                 nStream.Flush();
                             Array.Clear(bytes, 0, bytes.Length);
-                            break;
-                        }
+                            if (beforeNull <= 0)
+                                break;
+                        //}
                     }
                 }
             }

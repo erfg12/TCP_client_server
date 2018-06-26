@@ -129,8 +129,9 @@ namespace csharp_client
 
                     if (sendTextbox.Text.Contains("|"))
                         sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
-                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
-                    if (useSSL.Checked)
+                Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
+                //Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": TEST #1" + '\0' + nameBox.Text + ": TEST #2" + '\0' + nameBox.Text + ": TEST #3" + '\0' + nameBox.Text + ": TEST #4" + '\0' + nameBox.Text + ": TEST #5" + '\0'); //big string test
+                if (useSSL.Checked)
                         stream.Write(data, 0, data.Length);
                     else
                         nStream.Write(data, 0, data.Length);
@@ -161,12 +162,12 @@ namespace csharp_client
                     // if the bytes are greater than beforenull, process what's left
                     while (bal >= beforeNull)
                     {
-                        Console.WriteLine("[DEBUG] bytes=" + bal + " beforeNull=" + beforeNull);                        
+                        Console.WriteLine("[DEBUG] bal=" + bal + " beforeNull=" + beforeNull);                        
                         storage.AddRange(bytes.Skip(prevNull).Take(beforeNull)); //store up to null
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
                         int tmpStore = beforeNull;
                         beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
-                        bal = bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the streawm
+                        bal = (bal - tmpStore);//bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the stream
                         prevNull = tmpStore;
 
                         Console.WriteLine("[DEBUG] storage=" + System.Text.Encoding.Default.GetString(storage.ToArray()));
@@ -179,7 +180,7 @@ namespace csharp_client
 
                         //if (beforeNull < 0 || bal == 0) //no more nulls in stream
                         //{
-                        Console.WriteLine("[DEBUG] bal=" + bal.ToString());
+                        //Console.WriteLine("[DEBUG] bal=" + bal);
                             if (bal > 0)
                             {
                                 storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
@@ -191,6 +192,7 @@ namespace csharp_client
                                 nStream.Flush();
                             Console.WriteLine("[DEBUG] clearing bytes=" + System.Text.Encoding.Default.GetString(bytes));
                             Array.Clear(bytes, 0, bytes.Length);
+                        if (beforeNull <= 0)
                             break;
                         //}
                     }
