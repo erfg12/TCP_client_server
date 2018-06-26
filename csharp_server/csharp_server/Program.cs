@@ -31,11 +31,11 @@ namespace csharp_server
 
                 if (args.Length > 0)
                     localAddr = IPAddress.Parse(args[0]);
-
-                if (args.Length >= 1)
+                
+                if (args.ElementAtOrDefault(1) != null)
                     port = Convert.ToInt32(args[1]);
 
-                if (args.Length >= 2)
+                if (args.ElementAtOrDefault(2) != null)
                 {
                     if (args[2].ToLower().Equals("ssl") || args[2].ToLower().Equals("true") || args[2].Equals("1"))
                         ssl = true;
