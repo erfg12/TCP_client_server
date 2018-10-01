@@ -7,9 +7,7 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace csharp_server
 {
@@ -18,7 +16,6 @@ namespace csharp_server
         static List<TcpClient> cl = new List<TcpClient>();
         static Boolean ssl = false;
         static List<SslStream> streams = new List<SslStream>();
-        //static List<TcpClient> nStreams = new List<TcpClient>();
         static X509Certificate serverCertificate = null;
 
         static void Main(string[] args)
@@ -85,8 +82,6 @@ namespace csharp_server
                 {
                     NetworkStream tes = n.GetStream();
                     tes.Write(msg, 0, msg.Length);
-                    //tes.ReadTimeout = 600000;
-                    //tes.WriteTimeout = 600000;
                 }
             }
         }
@@ -162,19 +157,10 @@ namespace csharp_server
                 if (ssl)
                 {
                     stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls, true);
-                    // Display the properties and settings for the authenticated stream.
-                    //DisplaySecurityLevel(sslStream);
-                    //DisplaySecurityServices(sslStream);
-                    //DisplayCertificateInformation(sslStream);
-                    //DisplayStreamProperties(sslStream);
                     streams.Add(stream);
                     stream.ReadTimeout = 600000;
                     stream.WriteTimeout = 600000;
                 }
-                /*else
-                {
-                    nStreams.Add(client);
-                }*/
 
                 while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && ssl) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !ssl))
                 {
@@ -195,18 +181,15 @@ namespace csharp_server
                         ProcessMsg(nStream, stream, data);
                         storage.Clear(); //empty storage
 
-                        //if (beforeNull < 0 || bal == 0) //no more nulls in stream
-                        //{
-                            if (bal > 0)
-                                storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
-                            if (ssl)
-                                stream.Flush();
-                            else
-                                nStream.Flush();
-                            Array.Clear(bytes, 0, bytes.Length);
-                            if (beforeNull <= 0)
-                                break;
-                        //}
+                        if (bal > 0)
+                            storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
+                        if (ssl)
+                            stream.Flush();
+                        else
+                            nStream.Flush();
+                        Array.Clear(bytes, 0, bytes.Length);
+                        if (beforeNull <= 0)
+                            break;
                     }
                 }
             }

@@ -2,17 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace csharp_client
@@ -167,7 +163,7 @@ namespace csharp_client
                         data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
                         int tmpStore = beforeNull;
                         beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
-                        bal = (bal - tmpStore);//bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the stream
+                        bal = (bal - tmpStore); //bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the stream
                         prevNull = tmpStore;
 
                         Console.WriteLine("[DEBUG] storage=" + System.Text.Encoding.Default.GetString(storage.ToArray()));
@@ -177,10 +173,7 @@ namespace csharp_client
                             AppndText(data, Color.Blue);
                         }));
                         storage.Clear(); //empty storage
-
-                        //if (beforeNull < 0 || bal == 0) //no more nulls in stream
-                        //{
-                        //Console.WriteLine("[DEBUG] bal=" + bal);
+                        
                             if (bal > 0)
                             {
                                 storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
@@ -194,48 +187,7 @@ namespace csharp_client
                             Array.Clear(bytes, 0, bytes.Length);
                         if (beforeNull <= 0)
                             break;
-                        //}
                     }
-                    /*int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0);
-                    if (beforeNull >= 0) //done
-                    {
-                        storage.AddRange(bytes.Take(beforeNull)); //store up to null
-                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count());
-                    }
-                    else
-                    { //maybe client has lag, wait for null char
-                        storage.AddRange(bytes.Take(i)); //store all of it.
-                        continue;
-                    }
-
-                    //for commands in the future
-                    string[] args = new string[data.Length];
-                    string[] cmd = new string[data.Length];
-                    if (data.Contains(Char.MaxValue))
-                    {
-                        //Console.WriteLine("[DEBUG] Received: {0}", data);
-                        cmd = data.Split(Char.MaxValue);
-                        if (cmd[1].Contains(","))
-                            args = cmd[1].Split(',');
-                        else
-                            args[0] = cmd[1];
-                        continue;
-                    }
-                    //end cmds
-
-                    Invoke(new MethodInvoker(delegate
-                    {
-                        AppndText(data, Color.Blue);
-                    }));
-
-                    storage.Clear(); //empty storage
-
-                    // if the bytes are greater than beforenull, store the rest
-                    if (bytes.Take(i).ToArray().Length - 1 > beforeNull)
-                    {
-                        Console.WriteLine("[DEBUG] leftover bytes in wire (bytes=" + (bytes.Take(i).ToArray().Length - 1) + " before=" + beforeNull);
-                        storage.AddRange(bytes.Skip(i));
-                    }*/
                 }
             }
             catch
