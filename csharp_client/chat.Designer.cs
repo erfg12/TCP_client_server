@@ -1,6 +1,6 @@
 ﻿namespace csharp_client
 {
-    partial class Form1
+    partial class chatForm
     {
         /// <summary>
         /// Required designer variable.
@@ -40,15 +40,15 @@
             this.portBox = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.membersBtn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // sendBtn
             // 
-            this.sendBtn.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.sendBtn.Location = new System.Drawing.Point(370, 415);
+            this.sendBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.sendBtn.Location = new System.Drawing.Point(337, 416);
             this.sendBtn.Name = "sendBtn";
-            this.sendBtn.Size = new System.Drawing.Size(49, 23);
+            this.sendBtn.Size = new System.Drawing.Size(38, 23);
             this.sendBtn.TabIndex = 0;
             this.sendBtn.Text = "send";
             this.sendBtn.UseVisualStyleBackColor = true;
@@ -72,7 +72,7 @@
             this.sendTextbox.Location = new System.Drawing.Point(12, 417);
             this.sendTextbox.MaxLength = 2048;
             this.sendTextbox.Name = "sendTextbox";
-            this.sendTextbox.Size = new System.Drawing.Size(352, 20);
+            this.sendTextbox.Size = new System.Drawing.Size(325, 20);
             this.sendTextbox.TabIndex = 3;
             this.sendTextbox.Text = "test message";
             // 
@@ -152,11 +152,23 @@
             // 
             this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             // 
-            // Form1
+            // membersBtn
+            // 
+            this.membersBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.membersBtn.Location = new System.Drawing.Point(376, 416);
+            this.membersBtn.Name = "membersBtn";
+            this.membersBtn.Size = new System.Drawing.Size(43, 23);
+            this.membersBtn.TabIndex = 12;
+            this.membersBtn.Text = "mems";
+            this.membersBtn.UseVisualStyleBackColor = true;
+            this.membersBtn.Click += new System.EventHandler(this.membersBtn_Click);
+            // 
+            // chatForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(434, 450);
+            this.Controls.Add(this.membersBtn);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.portBox);
             this.Controls.Add(this.useSSL);
@@ -169,8 +181,10 @@
             this.Controls.Add(this.msgs);
             this.Controls.Add(this.sendBtn);
             this.MinimumSize = new System.Drawing.Size(450, 250);
-            this.Name = "Form1";
+            this.Name = "chatForm";
+            this.ShowIcon = false;
             this.Text = "TCP Client";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -191,6 +205,7 @@
         private System.Windows.Forms.TextBox portBox;
         private System.Windows.Forms.Label label3;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.Button membersBtn;
     }
 }
 

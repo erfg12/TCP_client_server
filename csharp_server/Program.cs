@@ -13,9 +13,9 @@ namespace csharp_server
 {
     class Program
     {
-        static List<TcpClient> cl = new List<TcpClient>();
+        static Dictionary<TcpClient, string> cl = new Dictionary<TcpClient, string>(); // connection, client name
         static Boolean ssl = false;
-        static List<SslStream> streams = new List<SslStream>();
+        static Dictionary<SslStream, string> streams = new Dictionary<SslStream, string>(); // connection, client name
         static X509Certificate serverCertificate = null;
 
         static void Main(string[] args)
@@ -55,7 +55,7 @@ namespace csharp_server
                     //Console.WriteLine("[DEBUG] Waiting for a connection...");
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("A client has connected!");
-                    ThreadPool.QueueUserWorkItem(ThreadProc, client);
+                    ThreadPool.QueueUserWorkItem(PacketProcessor, client);
                 }
             }
             catch (SocketException e)
@@ -67,18 +67,19 @@ namespace csharp_server
                 server.Stop();
             }
         }
-        static void broadcast(byte[] msg)
+        static void broadcast(string rlMsg)
         {
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(rlMsg + '\0');
             if (ssl)
             {
-                foreach (SslStream n in streams)
+                foreach (SslStream n in streams.Keys)
                 {
                     n.Write(msg);
                 }
             }
             else
             {
-                foreach (TcpClient n in cl)
+                foreach (TcpClient n in cl.Keys)
                 {
                     NetworkStream tes = n.GetStream();
                     tes.Write(msg, 0, msg.Length);
@@ -86,57 +87,47 @@ namespace csharp_server
             }
         }
 
-        private static void ProcessMsg(NetworkStream nStream, SslStream stream, string data)
+        private static void ProcessMsg(NetworkStream nStream, SslStream stream, TcpClient tcp, string data)
         {
             if (data.Contains("|")) //a command
             {
                 string[] args = new string[data.Length];
                 string[] cmd = new string[data.Length];
                 cmd = data.Split('|');
-                if (cmd[1].Contains(","))
-                    args = cmd[1].Split(',');
-                else
-                    args[0] = cmd[1];
-
-                Console.WriteLine("Received Cmd: {0}", cmd[0]);
+                
                 byte[] sndMsg = { 0 };
 
                 if (cmd[0].Equals("lm"))
                 { //list members
                     if (ssl)
-                        sndMsg = System.Text.Encoding.ASCII.GetBytes(streams.Count().ToString() + " client(s) currently connected." + '\0');
+                    {
+                        sndMsg = System.Text.Encoding.ASCII.GetBytes(String.Join(",", streams.Values) + '\0');
+                        stream.Write(sndMsg);
+                    }
                     else
                     {
-                        sndMsg = System.Text.Encoding.ASCII.GetBytes(cl.Count().ToString() + " client(s) currently connected." + '\0');
+                        sndMsg = System.Text.Encoding.ASCII.GetBytes(String.Join(",", cl.Values) + '\0');
+                        nStream.Write(sndMsg, 0, sndMsg.Length);
                     }
                 }
 
-                Console.WriteLine("Sending: {0}", System.Text.Encoding.Default.GetString(sndMsg));
-
-                if (ssl)
-                    stream.Write(sndMsg);
-                else
-                {
-                    //NetworkStream tes = cl.GetStream();
-                    nStream.Write(sndMsg, 0, sndMsg.Length);
+                if (cmd[0].Equals("con"))
+                { //connected
+                    if (ssl)
+                        streams[stream] = cmd[1]; // set client name
+                    else
+                        cl[tcp] = cmd[1]; // set client name
+                    broadcast("Welcome " + cmd[1] + "!");
                 }
             }
             else //just a text msg
-            {
-                Console.WriteLine("Received Txt: {0}", data);
-                byte[] msg = null;
-
-                if (data.Contains('\0')) //if not, this wasn't the end of the msg
-                    msg = System.Text.Encoding.ASCII.GetBytes(data);
-
-                broadcast(msg);
-            }
+                broadcast(data);
         }
 
-        private static void ThreadProc(object obj)
+        private static void PacketProcessor(object obj)
         {
             //Console.WriteLine("[DEBUG] client connection passed to ThreadProc...");
-            String data = null;
+            String data = "";
             var client = (TcpClient)obj;
             SslStream stream = null;
             NetworkStream nStream = null;
@@ -146,50 +137,39 @@ namespace csharp_server
             else
                 nStream = client.GetStream(); //moving on to SSL streams
 
-            cl.Add(client);
+            cl.Add(client, "");
             int i;
 
             try
             {
-                Byte[] bytes = new Byte[8192];
-                List<byte> storage = new List<byte>();
-
                 if (ssl)
                 {
                     stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls, true);
-                    streams.Add(stream);
+                    streams.Add(stream, "");
                     stream.ReadTimeout = 600000;
                     stream.WriteTimeout = 600000;
                 }
 
+                Byte[] bytes = new Byte[8192];
+
                 while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && ssl) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !ssl))
                 {
-                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0) + 1;
-                    int bal = i; //byte array length
-                    int prevNull = 0;
-                    // if the bytes are greater than beforenull, process what's left
-                    while (bal >= beforeNull)
+                    data += System.Text.Encoding.ASCII.GetString(bytes.ToArray(), 0, i); // convert bytes to string and store
+                    if (data.EndsWith("\0")) // check if end of msg (if last char is null)
                     {
-                        //Console.WriteLine("[DEBUG] bytes=" + bal + " beforeNull=" + beforeNull);                        
-                        storage.AddRange(bytes.Skip(prevNull).Take(beforeNull)); //store up to null
-                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
-                        int tmpStore = beforeNull;
-                        beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
-                        bal = (bal - tmpStore); //bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the streawm
-                        prevNull = tmpStore;
-
-                        ProcessMsg(nStream, stream, data);
-                        storage.Clear(); //empty storage
-
-                        if (bal > 0)
-                            storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
-                        if (ssl)
-                            stream.Flush();
-                        else
-                            nStream.Flush();
-                        Array.Clear(bytes, 0, bytes.Length);
-                        if (beforeNull <= 0)
-                            break;
+                        string[] msg = data.Split('\0'); // split buffer at null terminator(s)
+                        for (int t = 0, len = msg.Length; t < len; t++)
+                        {
+                            //Console.WriteLine("[DEBUG] msg " + t + " length:" + msg[t].Length);
+                            if (msg[t].Length > 0) // if not dead end
+                            {
+                                Console.WriteLine("Received: {0}", msg[t]);
+                                ProcessMsg(nStream, stream, client, msg[t]);
+                            }
+                            else
+                                break; // data holder can be full of null chars
+                        }
+                        data = ""; // clear our data holder
                     }
                 }
             }

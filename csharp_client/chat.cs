@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.Security;
@@ -13,9 +14,9 @@ using System.Windows.Forms;
 
 namespace csharp_client
 {
-    public partial class Form1 : Form
+    public partial class chatForm : Form
     {
-        public Form1()
+        public chatForm()
         {
             InitializeComponent();
         }
@@ -50,8 +51,7 @@ namespace csharp_client
             {
                 client = new TcpClient(server, Convert.ToInt32(port));
 
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + " has connected to the server!" + '\0'); //send data
-                Byte[] listMembers = System.Text.Encoding.ASCII.GetBytes("lm|" + '\0'); //send data
+                Byte[] data = System.Text.Encoding.ASCII.GetBytes("con|" + nameBox.Text + '\0'); //send data
                 connectBtn.Enabled = false;
 
                 if (useSSL.Checked) {
@@ -71,16 +71,14 @@ namespace csharp_client
                         client.Close();
                         return;
                     }
-                    ThreadPool.QueueUserWorkItem(ThreadProc); //start listening
+                    ThreadPool.QueueUserWorkItem(PacketProcessor); //start listening
                     stream.Write(data, 0, data.Length);
-                    stream.Write(listMembers, 0, listMembers.Length);
                 }
                 else
                 {
                     nStream = client.GetStream();
-                    ThreadPool.QueueUserWorkItem(ThreadProc); //start listening
+                    ThreadPool.QueueUserWorkItem(PacketProcessor); //start listening
                     nStream.Write(data, 0, data.Length);
-                    nStream.Write(listMembers, 0, listMembers.Length);
                 }
             }
             catch (ArgumentNullException e)
@@ -123,14 +121,14 @@ namespace csharp_client
                  //if (!backgroundWorker1.IsBusy) //flood test
                  //   backgroundWorker1.RunWorkerAsync();
 
-                    if (sendTextbox.Text.Contains("|"))
-                        sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
+                if (sendTextbox.Text.Contains("|"))
+                    sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
                 //Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": TEST #1" + '\0' + nameBox.Text + ": TEST #2" + '\0' + nameBox.Text + ": TEST #3" + '\0' + nameBox.Text + ": TEST #4" + '\0' + nameBox.Text + ": TEST #5" + '\0'); //big string test
                 if (useSSL.Checked)
-                        stream.Write(data, 0, data.Length);
-                    else
-                        nStream.Write(data, 0, data.Length);
+                    stream.Write(data, 0, data.Length);
+                else
+                    nStream.Write(data, 0, data.Length);
             }
             catch
             {
@@ -139,54 +137,34 @@ namespace csharp_client
             }
         }
 
-        void ThreadProc(object obj)
+        void PacketProcessor(object obj)
         {
-            //Console.WriteLine("[DEBUG] client connection passed to ThreadProc...");
-            String data = null;
-            int i;
+            int i = 0;
+            String data = "";
 
             try
             {
                 Byte[] bytes = new Byte[8192];
-                List<byte> storage = new List<byte>();
+
                 while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && useSSL.Checked) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !useSSL.Checked))
                 {
-                    //received
-                    int beforeNull = Array.IndexOf(bytes.Take(i).ToArray(), (byte)0) + 1;
-                    int bal = i; //byte array length
-                    int prevNull = 0;
-                    // if the bytes are greater than beforenull, process what's left
-                    while (bal >= beforeNull)
+                    data += System.Text.Encoding.ASCII.GetString(bytes.ToArray(), 0, i); // convert bytes to string and store
+                    if (data.EndsWith("\0")) // check if end of msg (if last char is null)
                     {
-                        Console.WriteLine("[DEBUG] bal=" + bal + " beforeNull=" + beforeNull);                        
-                        storage.AddRange(bytes.Skip(prevNull).Take(beforeNull)); //store up to null
-                        data = System.Text.Encoding.ASCII.GetString(storage.ToArray(), 0, storage.Count()); //converted
-                        int tmpStore = beforeNull;
-                        beforeNull = Array.IndexOf(bytes.Skip(beforeNull).Take(beforeNull + 1).ToArray(), (byte)0); //another null char in stream?
-                        bal = (bal - tmpStore); //bytes.Skip(tmpStore).Take(beforeNull).ToArray().Length; // whatever is left to process of the stream
-                        prevNull = tmpStore;
-
-                        Console.WriteLine("[DEBUG] storage=" + System.Text.Encoding.Default.GetString(storage.ToArray()));
-                        
-                        Invoke(new MethodInvoker(delegate
+                        string[] msg = data.Split('\0'); // split buffer at null terminator(s)
+                        for (int t = 0, len = msg.Length; t < len; t++)
                         {
-                            AppndText(data, Color.Blue);
-                        }));
-                        storage.Clear(); //empty storage
-                        
-                            if (bal > 0)
+                            if (msg[t].Length > 0) // if not dead end
                             {
-                                storage.AddRange(bytes.Skip(prevNull).Take(bal)); //store remaining bytes
-                                Console.WriteLine("[DEBUG] new storage=" + System.Text.Encoding.Default.GetString(storage.ToArray()));
+                                Invoke(new MethodInvoker(delegate
+                                {
+                                    AppndText(msg[t], Color.Blue);
+                                }));
                             }
-                            if (useSSL.Checked)
-                                stream.Flush();
                             else
-                                nStream.Flush();
-                            Console.WriteLine("[DEBUG] clearing bytes=" + System.Text.Encoding.Default.GetString(bytes));
-                            Array.Clear(bytes, 0, bytes.Length);
-                        if (beforeNull <= 0)
-                            break;
+                                break; // data holder can be full of null chars
+                        }
+                        data = ""; // clear our data holder
                     }
                 }
             }
@@ -230,6 +208,22 @@ namespace csharp_client
         {
             Properties.Settings.Default.ipAddr = ipAddrBox.Text;
             Properties.Settings.Default.Save();
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (client != null)
+                client.Close();
+        }
+
+        private void membersBtn_Click(object sender, EventArgs e)
+        {
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes("lm|" + '\0');
+
+            if (useSSL.Checked)
+                stream.Write(data, 0, data.Length);
+            else
+                nStream.Write(data, 0, data.Length);
         }
     }
 }
