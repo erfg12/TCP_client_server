@@ -17,6 +17,13 @@ namespace csharp_client
 {
     public partial class chatForm : Form
     {
+        SslStream stream;
+        NetworkStream nStream;
+        TcpClient client;
+        IAsyncResult conResult;
+        Byte[] readBuffer = new Byte[8192];
+        private static Hashtable certificateErrors = new Hashtable();
+
         public chatForm()
         {
             InitializeComponent();
@@ -26,13 +33,6 @@ namespace csharp_client
         {
             ipAddrBox.Text = Properties.Settings.Default.ipAddr;
         }
-        
-        SslStream stream;
-        NetworkStream nStream;
-        TcpClient client;
-        IAsyncResult conResult;
-
-        private static Hashtable certificateErrors = new Hashtable();
 
         // The following method is invoked by the RemoteCertificateValidationDelegate.
         public static bool ValidateServerCertificate( object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -46,11 +46,123 @@ namespace csharp_client
             return false;
         }
 
-        //connect to server
-        void Connect(String server, String port)
+        //send text from sendTextbox to TcpListener
+        private void sndMsg_Click(object sender, EventArgs e)
         {
             try
             {
+                if (sendTextbox.Text.Contains("|"))
+                    sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
+                Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
+                //Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": TEST #1" + '\0' + nameBox.Text + ": TEST #2" + '\0' + nameBox.Text + ": TEST #3" + '\0' + nameBox.Text + ": TEST #4" + '\0' + nameBox.Text + ": TEST #5" + '\0'); //big string test
+                if (useSSL.Checked)
+                    stream.Write(data, 0, data.Length);
+                else
+                    nStream.Write(data, 0, data.Length);
+            }
+            catch
+            {
+                AppndText("ERROR: not connected to server", Color.Red);
+                connectBtn.Text = "connect";
+                connectBtn.ForeColor = Color.Green;
+            }
+        }
+
+        private void connectBtn_Click(object sender, EventArgs e)
+        {
+            // connect to the server
+            if (connectBtn.Text == "connect")
+            {
+                Thread newThread = new Thread(Connect);
+                newThread.Start();
+            }
+            else
+                EndConnect(conResult);
+        }
+
+        private void ipAddrBox_TextChanged(object sender, EventArgs e)
+        {
+            // save our host for next time use
+            Properties.Settings.Default.ipAddr = ipAddrBox.Text;
+            Properties.Settings.Default.Save();
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // end our connection
+            EndConnect(conResult);
+        }
+
+        private void membersBtn_Click(object sender, EventArgs e)
+        {
+            // send command to list connected members
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes("lm|" + '\0');
+
+            if (useSSL.Checked)
+                stream.Write(data, 0, data.Length);
+            else
+                nStream.Write(data, 0, data.Length);
+        }
+
+        /// <summary>
+        /// Process incoming packets in a new thread
+        /// </summary>
+        /// <param name="obj"></param>
+        void PacketProcessor(object obj)
+        {
+            int i = 0;
+            String data = "";
+
+            try
+            {
+                Byte[] bytes = new Byte[8192];
+
+                while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && useSSL.Checked) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !useSSL.Checked))
+                {
+                    data += System.Text.Encoding.ASCII.GetString(bytes.ToArray(), 0, i); // convert bytes to string and store
+                    if (data.EndsWith("\0")) // check if end of msg (if last char is null)
+                    {
+                        string[] msg = data.Split('\0'); // split buffer at null terminator(s)
+                        for (int t = 0, len = msg.Length; t < len; t++)
+                        {
+                            if (msg[t].Length > 0) // if not dead end
+                            {
+                                AppndText(msg[t], Color.Blue);
+                            }
+                            else
+                                break; // data holder can be full of null chars
+                        }
+                        data = ""; // clear our data holder
+                    }
+                }
+            }
+            catch
+            {
+                try
+                {
+                    AppndText("Connection died.", Color.Red);
+                    connectBtn.Invoke(new MethodInvoker(delegate
+                    {
+                        connectBtn.Text = "connect";
+                        connectBtn.ForeColor = Color.Green;
+                    }));
+                }
+                catch { }
+            }
+        }
+
+        /// <summary>
+        /// Connect to the server
+        /// </summary>
+        /// <param name="server">server hostname/ip</param>
+        /// <param name="port">server port</param>
+        void Connect()
+        {
+            string server = ipAddrBox.Text;
+            string port = portBox.Text;
+            try
+            {
+                AppndText("Attempting to connect to server...", Color.Green);
                 // try to connect with timeout of 3 seconds
                 client = new TcpClient();
                 conResult = client.BeginConnect(server, Convert.ToInt32(port), null, null);
@@ -63,10 +175,14 @@ namespace csharp_client
                 }
 
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes("con|" + nameBox.Text + '\0'); //send data
-                connectBtn.Text = "disconnect";
-                connectBtn.ForeColor = Color.Red;
+                connectBtn.Invoke(new MethodInvoker(delegate
+                {
+                    connectBtn.Text = "disconnect";
+                    connectBtn.ForeColor = Color.Red;
+                }));
 
-                if (useSSL.Checked) {
+                if (useSSL.Checked)
+                {
                     stream = new SslStream(client.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                     // The server name must match the name on the server certificate.
                     string serverName = "server";
@@ -92,6 +208,7 @@ namespace csharp_client
                     ThreadPool.QueueUserWorkItem(PacketProcessor); //start listening
                     nStream.Write(data, 0, data.Length);
                 }
+                AppndText("Connected to server!", Color.Green);
             }
             catch (ArgumentNullException e)
             {
@@ -104,148 +221,42 @@ namespace csharp_client
             catch
             {
                 AppndText("Connection failed", Color.Red);
+                connectBtn.Invoke(new MethodInvoker(delegate
+                {
+                    connectBtn.Text = "connect";
+                    connectBtn.ForeColor = Color.Green;
+                }));
             }
         }
 
-        //send text with color and scroll textbox down
+        /// <summary>
+        /// Append text to rich textbox and scroll down
+        /// </summary>
+        /// <param name="text">text to display in rich textbox</param>
+        /// <param name="color">color to display text in</param>
         void AppndText(string text, Color color)
         {
-            if (text.Contains('\0'))
-                text = text.Replace("\0", string.Empty);
-
-            msgs.SelectionStart = msgs.TextLength;
-            msgs.SelectionLength = 0;
-
-            msgs.SelectionColor = color;
-            msgs.AppendText(text + Environment.NewLine);
-            msgs.SelectionColor = msgs.ForeColor;
-
-            msgs.SelectionStart = msgs.Text.Length;
-            msgs.ScrollToCaret();
-        }
-
-        //send text from sendTextbox to TcpListener
-        Byte[] readBuffer = new Byte[8192];
-        private void sndMsg_Click(object sender, EventArgs e)
-        {
-            try
+            msgs.Invoke(new MethodInvoker(delegate
             {
-                 //if (!backgroundWorker1.IsBusy) //flood test
-                 //   backgroundWorker1.RunWorkerAsync();
+                if (text.Contains('\0'))
+                    text = text.Replace("\0", string.Empty);
 
-                if (sendTextbox.Text.Contains("|"))
-                    sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
-                //Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": TEST #1" + '\0' + nameBox.Text + ": TEST #2" + '\0' + nameBox.Text + ": TEST #3" + '\0' + nameBox.Text + ": TEST #4" + '\0' + nameBox.Text + ": TEST #5" + '\0'); //big string test
-                if (useSSL.Checked)
-                    stream.Write(data, 0, data.Length);
-                else
-                    nStream.Write(data, 0, data.Length);
-            }
-            catch
-            {
-                AppndText("ERROR: not connected to server", Color.Red);
-                connectBtn.Text = "connect";
-                connectBtn.ForeColor = Color.Green;
-            }
+                msgs.SelectionStart = msgs.TextLength;
+                msgs.SelectionLength = 0;
+
+                msgs.SelectionColor = color;
+                msgs.AppendText(text + Environment.NewLine);
+                msgs.SelectionColor = msgs.ForeColor;
+
+                msgs.SelectionStart = msgs.Text.Length;
+                msgs.ScrollToCaret();
+            }));
         }
 
-        void PacketProcessor(object obj)
-        {
-            int i = 0;
-            String data = "";
-
-            try
-            {
-                Byte[] bytes = new Byte[8192];
-
-                while ((stream != null && (i = stream.Read(bytes, 0, bytes.Length)) != 0 && useSSL.Checked) || (nStream != null && (i = nStream.Read(bytes, 0, bytes.Length)) != 0 && !useSSL.Checked))
-                {
-                    data += System.Text.Encoding.ASCII.GetString(bytes.ToArray(), 0, i); // convert bytes to string and store
-                    if (data.EndsWith("\0")) // check if end of msg (if last char is null)
-                    {
-                        string[] msg = data.Split('\0'); // split buffer at null terminator(s)
-                        for (int t = 0, len = msg.Length; t < len; t++)
-                        {
-                            if (msg[t].Length > 0) // if not dead end
-                            {
-                                Invoke(new MethodInvoker(delegate
-                                {
-                                    AppndText(msg[t], Color.Blue);
-                                }));
-                            }
-                            else
-                                break; // data holder can be full of null chars
-                        }
-                        data = ""; // clear our data holder
-                    }
-                }
-            }
-            catch
-            {
-                try
-                {
-                    Invoke(new MethodInvoker(delegate
-                    {
-                        AppndText("Connection died.", Color.Red);
-                    }));
-                    connectBtn.Invoke(new MethodInvoker(delegate
-                    {
-                        connectBtn.Text = "connect";
-                        connectBtn.ForeColor = Color.Green;
-                    }));
-                }
-                catch { }
-            }
-        }
-
-        private void connectBtn_Click(object sender, EventArgs e)
-        {
-            if (connectBtn.Text == "connect")
-                Connect(ipAddrBox.Text, portBox.Text);
-            else
-                EndConnect(conResult);
-        }
-
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
-        {
-            while (true)
-            {
-                try
-                {
-                    if (sendTextbox.Text.Contains("|"))
-                        sendTextbox.Text = sendTextbox.Text.Replace('|', '?');
-                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(nameBox.Text + ": " + sendTextbox.Text + '\0'); //send data
-                    if (useSSL.Checked)
-                        stream.Write(data, 0, data.Length);
-                    else
-                        nStream.Write(data, 0, data.Length);
-                }
-                catch { }
-            }
-        }
-
-        private void ipAddrBox_TextChanged(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.ipAddr = ipAddrBox.Text;
-            Properties.Settings.Default.Save();
-        }
-
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            EndConnect(conResult);
-        }
-
-        private void membersBtn_Click(object sender, EventArgs e)
-        {
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes("lm|" + '\0');
-
-            if (useSSL.Checked)
-                stream.Write(data, 0, data.Length);
-            else
-                nStream.Write(data, 0, data.Length);
-        }
-
+        /// <summary>
+        /// End our connection with the server properly
+        /// </summary>
+        /// <param name="ar"></param>
         void EndConnect(IAsyncResult ar)
         {
             try
@@ -263,6 +274,7 @@ namespace csharp_client
 
                 client.Close();
                 connectBtn.Text = "connect";
+                connectBtn.ForeColor = Color.Green;
                 AppndText("Disconnected from server.", Color.Red);
             } catch { }
         }
