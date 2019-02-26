@@ -11,6 +11,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Windows.Forms;
+using static System.Windows.Forms.AxHost;
 
 namespace csharp_client
 {
@@ -29,6 +30,7 @@ namespace csharp_client
         SslStream stream;
         NetworkStream nStream;
         TcpClient client;
+        IAsyncResult conResult;
 
         private static Hashtable certificateErrors = new Hashtable();
 
@@ -49,7 +51,16 @@ namespace csharp_client
         {
             try
             {
-                client = new TcpClient(server, Convert.ToInt32(port));
+                // try to connect with timeout of 1 second
+                client = new TcpClient();
+                conResult = client.BeginConnect(server, Convert.ToInt32(port), null, null);
+
+                var success = conResult.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(1));
+
+                if (!success)
+                {
+                    throw new Exception("Failed to connect.");
+                }
 
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes("con|" + nameBox.Text + '\0'); //send data
                 connectBtn.Enabled = false;
@@ -212,8 +223,8 @@ namespace csharp_client
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (client != null)
-                client.Close();
+
+            EndConnect(conResult);
         }
 
         private void membersBtn_Click(object sender, EventArgs e)
@@ -224,6 +235,22 @@ namespace csharp_client
                 stream.Write(data, 0, data.Length);
             else
                 nStream.Write(data, 0, data.Length);
+        }
+
+        void EndConnect(IAsyncResult ar)
+        {
+            var state = (State)ar.AsyncState;
+
+            if (!client.Connected /*&& state.Success*/)
+                return;
+
+            try
+            {
+                client.EndConnect(ar);
+            }
+            catch { }
+
+            client.Close();
         }
     }
 }

@@ -177,7 +177,10 @@ namespace csharp_server
             {
                 Console.WriteLine("A client has left");
                 client.Close();
-                cl.Remove(client);
+                if (ssl)
+                    streams.Remove(stream);
+                else
+                    cl.Remove(client);
                 if (stream != null)
                     stream.Close();
                 if (nStream != null)
