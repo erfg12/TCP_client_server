@@ -96,9 +96,10 @@
             // 
             // connectBtn
             // 
+            this.connectBtn.ForeColor = System.Drawing.Color.Green;
             this.connectBtn.Location = new System.Drawing.Point(308, 9);
             this.connectBtn.Name = "connectBtn";
-            this.connectBtn.Size = new System.Drawing.Size(56, 23);
+            this.connectBtn.Size = new System.Drawing.Size(67, 23);
             this.connectBtn.TabIndex = 6;
             this.connectBtn.Text = "connect";
             this.connectBtn.UseVisualStyleBackColor = true;
@@ -124,7 +125,7 @@
             // useSSL
             // 
             this.useSSL.AutoSize = true;
-            this.useSSL.Location = new System.Drawing.Point(378, 13);
+            this.useSSL.Location = new System.Drawing.Point(380, 13);
             this.useSSL.Name = "useSSL";
             this.useSSL.Size = new System.Drawing.Size(46, 17);
             this.useSSL.TabIndex = 9;

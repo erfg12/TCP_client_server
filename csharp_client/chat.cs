@@ -51,11 +51,11 @@ namespace csharp_client
         {
             try
             {
-                // try to connect with timeout of 1 second
+                // try to connect with timeout of 3 seconds
                 client = new TcpClient();
                 conResult = client.BeginConnect(server, Convert.ToInt32(port), null, null);
 
-                var success = conResult.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(1));
+                var success = conResult.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
 
                 if (!success)
                 {
@@ -63,7 +63,8 @@ namespace csharp_client
                 }
 
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes("con|" + nameBox.Text + '\0'); //send data
-                connectBtn.Enabled = false;
+                connectBtn.Text = "disconnect";
+                connectBtn.ForeColor = Color.Red;
 
                 if (useSSL.Checked) {
                     stream = new SslStream(client.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
@@ -144,7 +145,8 @@ namespace csharp_client
             catch
             {
                 AppndText("ERROR: not connected to server", Color.Red);
-                connectBtn.Enabled = true;
+                connectBtn.Text = "connect";
+                connectBtn.ForeColor = Color.Green;
             }
         }
 
@@ -181,20 +183,28 @@ namespace csharp_client
             }
             catch
             {
-                Invoke(new MethodInvoker(delegate
+                try
                 {
-                    AppndText("connection died:", Color.Red);
-                }));
-                connectBtn.Invoke(new MethodInvoker(delegate
-                {
-                    connectBtn.Enabled = true;
-                }));
+                    Invoke(new MethodInvoker(delegate
+                    {
+                        AppndText("Connection died.", Color.Red);
+                    }));
+                    connectBtn.Invoke(new MethodInvoker(delegate
+                    {
+                        connectBtn.Text = "connect";
+                        connectBtn.ForeColor = Color.Green;
+                    }));
+                }
+                catch { }
             }
         }
 
         private void connectBtn_Click(object sender, EventArgs e)
         {
-            Connect(ipAddrBox.Text, portBox.Text);
+            if (connectBtn.Text == "connect")
+                Connect(ipAddrBox.Text, portBox.Text);
+            else
+                EndConnect(conResult);
         }
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
@@ -223,7 +233,6 @@ namespace csharp_client
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-
             EndConnect(conResult);
         }
 
@@ -239,18 +248,23 @@ namespace csharp_client
 
         void EndConnect(IAsyncResult ar)
         {
-            var state = (State)ar.AsyncState;
-
-            if (!client.Connected /*&& state.Success*/)
-                return;
-
             try
             {
-                client.EndConnect(ar);
-            }
-            catch { }
+                var state = (State)ar.AsyncState;
 
-            client.Close();
+                if (!client.Connected /*&& state.Success*/)
+                    return;
+
+                try
+                {
+                    client.EndConnect(ar);
+                }
+                catch { }
+
+                client.Close();
+                connectBtn.Text = "connect";
+                AppndText("Disconnected from server.", Color.Red);
+            } catch { }
         }
     }
 }
