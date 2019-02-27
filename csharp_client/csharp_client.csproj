@@ -51,6 +51,7 @@
     <Compile Include="chat.Designer.cs">
       <DependentUpon>chat.cs</DependentUpon>
     </Compile>
+    <Compile Include="client_class.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="chat.resx">

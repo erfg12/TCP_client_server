@@ -5,5 +5,14 @@
     <Setting Name="ipAddr" Type="System.String" Scope="User">
       <Value Profile="(Default)">127.0.0.1</Value>
     </Setting>
+    <Setting Name="nick" Type="System.String" Scope="User">
+      <Value Profile="(Default)">BetaTester</Value>
+    </Setting>
+    <Setting Name="port" Type="System.String" Scope="User">
+      <Value Profile="(Default)">10500</Value>
+    </Setting>
+    <Setting Name="ssl" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

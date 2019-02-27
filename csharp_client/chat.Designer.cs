@@ -48,7 +48,7 @@
             this.sendBtn.Location = new System.Drawing.Point(337, 416);
             this.sendBtn.Name = "sendBtn";
             this.sendBtn.Size = new System.Drawing.Size(38, 23);
-            this.sendBtn.TabIndex = 0;
+            this.sendBtn.TabIndex = 6;
             this.sendBtn.Text = "send";
             this.sendBtn.UseVisualStyleBackColor = true;
             this.sendBtn.Click += new System.EventHandler(this.sndMsg_Click);
@@ -62,6 +62,7 @@
             this.msgs.Name = "msgs";
             this.msgs.Size = new System.Drawing.Size(407, 372);
             this.msgs.TabIndex = 2;
+            this.msgs.TabStop = false;
             this.msgs.Text = "";
             // 
             // sendTextbox
@@ -72,22 +73,21 @@
             this.sendTextbox.MaxLength = 2048;
             this.sendTextbox.Name = "sendTextbox";
             this.sendTextbox.Size = new System.Drawing.Size(325, 20);
-            this.sendTextbox.TabIndex = 3;
-            this.sendTextbox.Text = "test message";
+            this.sendTextbox.TabIndex = 5;
             // 
             // ipAddrBox
             // 
-            this.ipAddrBox.Location = new System.Drawing.Point(174, 10);
+            this.ipAddrBox.Location = new System.Drawing.Point(150, 10);
             this.ipAddrBox.Name = "ipAddrBox";
-            this.ipAddrBox.Size = new System.Drawing.Size(74, 20);
-            this.ipAddrBox.TabIndex = 4;
+            this.ipAddrBox.Size = new System.Drawing.Size(98, 20);
+            this.ipAddrBox.TabIndex = 1;
             this.ipAddrBox.Text = "127.0.0.1";
             this.ipAddrBox.TextChanged += new System.EventHandler(this.ipAddrBox_TextChanged);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(154, 13);
+            this.label1.Location = new System.Drawing.Point(130, 13);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(20, 13);
             this.label1.TabIndex = 5;
@@ -99,23 +99,24 @@
             this.connectBtn.Location = new System.Drawing.Point(308, 9);
             this.connectBtn.Name = "connectBtn";
             this.connectBtn.Size = new System.Drawing.Size(67, 23);
-            this.connectBtn.TabIndex = 6;
+            this.connectBtn.TabIndex = 3;
             this.connectBtn.Text = "connect";
             this.connectBtn.UseVisualStyleBackColor = true;
             this.connectBtn.Click += new System.EventHandler(this.connectBtn_Click);
             // 
             // nameBox
             // 
-            this.nameBox.Location = new System.Drawing.Point(49, 10);
+            this.nameBox.Location = new System.Drawing.Point(45, 10);
             this.nameBox.Name = "nameBox";
-            this.nameBox.Size = new System.Drawing.Size(100, 20);
-            this.nameBox.TabIndex = 7;
+            this.nameBox.Size = new System.Drawing.Size(85, 20);
+            this.nameBox.TabIndex = 0;
             this.nameBox.Text = "Beta Tester";
+            this.nameBox.TextChanged += new System.EventHandler(this.nameBox_TextChanged);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(13, 13);
+            this.label2.Location = new System.Drawing.Point(9, 13);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(36, 13);
             this.label2.TabIndex = 8;
@@ -127,17 +128,19 @@
             this.useSSL.Location = new System.Drawing.Point(380, 13);
             this.useSSL.Name = "useSSL";
             this.useSSL.Size = new System.Drawing.Size(46, 17);
-            this.useSSL.TabIndex = 9;
+            this.useSSL.TabIndex = 4;
             this.useSSL.Text = "SSL";
             this.useSSL.UseVisualStyleBackColor = true;
+            this.useSSL.CheckedChanged += new System.EventHandler(this.useSSL_CheckedChanged);
             // 
             // portBox
             // 
             this.portBox.Location = new System.Drawing.Point(258, 10);
             this.portBox.Name = "portBox";
             this.portBox.Size = new System.Drawing.Size(48, 20);
-            this.portBox.TabIndex = 10;
+            this.portBox.TabIndex = 2;
             this.portBox.Text = "13000";
+            this.portBox.TextChanged += new System.EventHandler(this.portBox_TextChanged);
             // 
             // label3
             // 
@@ -154,7 +157,7 @@
             this.membersBtn.Location = new System.Drawing.Point(376, 416);
             this.membersBtn.Name = "membersBtn";
             this.membersBtn.Size = new System.Drawing.Size(43, 23);
-            this.membersBtn.TabIndex = 12;
+            this.membersBtn.TabIndex = 7;
             this.membersBtn.Text = "mems";
             this.membersBtn.UseVisualStyleBackColor = true;
             this.membersBtn.Click += new System.EventHandler(this.membersBtn_Click);
@@ -182,6 +185,7 @@
             this.Text = "TCP Client";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.Shown += new System.EventHandler(this.chatForm_Shown);
             this.ResumeLayout(false);
             this.PerformLayout();
 
