@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>TCP Client</title>
+    <link
+      rel="stylesheet"
+      href="node_modules/bootstrap/dist/css/bootstrap.css"
+    />
+  </head>
+  <body>
+    <div
+      style="width:95%;text-align:center;margin-left:auto;margin-right:auto;height:90vh;"
+    >
+      <div
+        syle="height:100px;overflow:auto;width:90vh;display:block;border:thin solid black;margin-bottom:5px;"
+      >
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Name"
+          id="nick"
+          style="float:left;width:200px;margin-right:10px;"
+          value="beta tester"
+        />
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Server IP"
+          id="host"
+          style="float:left;width:200px;margin-right:10px;"
+          value="127.0.0.1"
+        />
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Port"
+          id="port"
+          style="float:left;width:100px;margin-right:10px;"
+          value="13000"
+        />
+        <input
+          class="btn btn-success btn-sm"
+          style="float:left;margin-right:10px;"
+          type="button"
+          id="connectbtn"
+          value="Connect"
+        />
+        <div style="float:left;">
+          <input type="checkbox" name="usessl" /> SSL
+        </div>
+      </div>
+      <textarea
+        class="form-control"
+        style="width:100%;height:90%;resize: none;margin:55px 0px 5px 0px;"
+        id="txtarea"
+        readonly
+      ></textarea>
+      <div class="input-group mb-3">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Type Messages Here"
+          id="txtmsg"
+        />
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="button" id="sndbtn">
+            Send
+          </button>
+          <button class="btn btn-outline-secondary" type="button">Mems</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var ipc = require("electron").ipcRenderer;
+
+      var connectBtnClick = document.getElementById("connectbtn");
+      var sndBtn = document.getElementById("sndbtn");
+
+      connectBtnClick.addEventListener("click", function() {
+        var host = document.getElementById("host");
+        var port = document.getElementById("port");
+        ipc.send("connectAction", host.value, port.value);
+      });
+
+      sndBtn.addEventListener("click", function() {
+        ipc.send(
+          "sendAction",
+          document.getElementById("nick").value,
+          document.getElementById("txtmsg").value
+        );
+      });
+
+      // messages received from main.js
+      ipc.on("msgReply", function(event, data) {
+        document.getElementById("txtarea").value += data + "\n";
+      });
+
+      require("./renderer.js");
+    </script>
+  </body>
+</html>
