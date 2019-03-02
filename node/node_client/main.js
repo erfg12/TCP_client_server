@@ -42,6 +42,13 @@ var ipc = require("electron").ipcMain;
 
 ipc.on("sendAction", function(event, nick, msg) {
   client.write(nick + ":" + msg + "\0");
+  event.sender.send("clearMsgs");
+});
+
+ipc.on("disconnect", function(event, data){
+  client.end();
+  client.destroy();
+  event.sender.send("msgReply", "TCP connection has been closed.");
 });
 
 ipc.on("connectAction", function(event, host, port) {
@@ -51,6 +58,7 @@ ipc.on("connectAction", function(event, host, port) {
   client.connect(port, host, function() {
     console.log("TCP client connected to: " + host + ":" + port);
     event.sender.send("msgReply", "Connection was successful!");
+    event.sender.send("toggleCBtn");
   });
 
   // receive data
@@ -76,5 +84,6 @@ ipc.on("connectAction", function(event, host, port) {
   client.on("error", function(err) {
     console.error(err);
     event.sender.send("msgReply", "ERROR: " + JSON.stringify(err));
+    event.sender.send("toggleCBtn");
   });
 });

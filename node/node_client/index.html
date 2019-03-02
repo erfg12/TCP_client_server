@@ -12,13 +12,11 @@
     <div
       style="width:95%;text-align:center;margin-left:auto;margin-right:auto;height:90vh;"
     >
-      <div
-        syle="height:100px;overflow:auto;width:90vh;display:block;border:thin solid black;margin-bottom:5px;"
-      >
-        <input
+    <div class="input-group" style="margin-top:10px;">
+      <input
           type="text"
           class="form-control form-control-sm"
-          placeholder="Name"
+          placeholder="User Name"
           id="nick"
           style="float:left;width:200px;margin-right:10px;"
           value="beta tester"
@@ -26,7 +24,7 @@
         <input
           type="text"
           class="form-control form-control-sm"
-          placeholder="Server IP"
+          placeholder="Server IP / Hostname"
           id="host"
           style="float:left;width:200px;margin-right:10px;"
           value="127.0.0.1"
@@ -49,10 +47,10 @@
         <div style="float:left;">
           <input type="checkbox" name="usessl" /> SSL
         </div>
-      </div>
+  </div>
       <textarea
         class="form-control"
-        style="width:100%;height:90%;resize: none;margin:55px 0px 5px 0px;"
+        style="width:100%;height:90%;resize: none;margin:10px 0px 10px 0px;"
         id="txtarea"
         readonly
       ></textarea>
@@ -79,9 +77,16 @@
       var sndBtn = document.getElementById("sndbtn");
 
       connectBtnClick.addEventListener("click", function() {
-        var host = document.getElementById("host");
-        var port = document.getElementById("port");
-        ipc.send("connectAction", host.value, port.value);
+        const cBtn = document.getElementById("connectbtn");
+        if (cBtn.value == "Connect"){
+          var host = document.getElementById("host");
+          var port = document.getElementById("port");
+          ipc.send("connectAction", host.value, port.value);
+        } else {
+          ipc.send("disconnect");
+          cBtn.className = "btn btn-success btn-sm";
+          cBtn.value = "Connect";
+        }
       });
 
       sndBtn.addEventListener("click", function() {
@@ -95,6 +100,35 @@
       // messages received from main.js
       ipc.on("msgReply", function(event, data) {
         document.getElementById("txtarea").value += data + "\n";
+        updateScroll();
+      });
+
+      ipc.on("clearMsgs", function(event,data){
+        document.getElementById("txtmsg").value = "";
+      });
+
+      ipc.on("toggleCBtn", function(event,data){
+        const cBtn = document.getElementById("connectbtn");
+        if (cBtn.value == "Connect"){
+          cBtn.className = "btn btn-danger btn-sm";
+          cBtn.value = "Disconnect";
+        } else {
+          cBtn.className = "btn btn-success btn-sm";
+          cBtn.value = "Connect";
+        }
+      });
+
+      // scroll to bottom
+      var scrolled = false;
+      function updateScroll(){
+          if(!scrolled){
+              var element = document.getElementById("txtarea");
+              element.scrollTop = element.scrollHeight;
+          }
+      }
+
+      $("#txtarea").on('scroll', function(){
+          scrolled=true;
       });
 
       require("./renderer.js");
