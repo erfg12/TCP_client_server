@@ -44,7 +44,8 @@ net.createServer(function(sock) {
 
     function broadcast(message) {
         clients.forEach(function (client) {
-          client.write(message + '\0');
+            //console.log("SENDING:" + message);
+            client.write(message + '\0');
         });
     }
 
