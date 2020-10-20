@@ -22,7 +22,7 @@ public class NetListen : MonoBehaviour
             CheckForData(MMONetwork.clientSocket);
             if (response.Length > 1)
             {
-                Debug.Log("data from server received in the client 2: \"" + response + "\"");
+                Debug.Log("data from server: \"" + response + "\"");
                 ChatBox.text += response;
                 response = "";
             }
@@ -64,6 +64,8 @@ public class NetListen : MonoBehaviour
             Array.Copy(MMONetwork.clientBuffer, data, bytesRead);
 
             response = Encoding.Default.GetString(MMONetwork.clientBuffer).TrimEnd('\0') + Environment.NewLine;
+
+            Array.Clear(MMONetwork.clientBuffer, 0, MMONetwork.clientBuffer.Length);
         }
         catch (Exception ex)
         {
