@@ -1,14 +1,9 @@
-#include <stdio.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
+#include "networking.h"
 
 int main() {
     int clientSocket;
     char buffer[1024];
     struct sockaddr_in serverAddr;
-    struct sockaddr_storage serverStorage;
     socklen_t addr_size;
 
     clientSocket = socket(PF_INET, SOCK_STREAM, 0);

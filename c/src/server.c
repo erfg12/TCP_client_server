@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
+#include "networking.h"
 
 int main() {
     int welcomeSocket, newSocket;

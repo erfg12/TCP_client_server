@@ -2,8 +2,8 @@ CC = "gcc"
 
 all: server client
 
-server: server.o
-	$(CC) server.c -o server
+server: src/server.o
+	$(CC) src/server.c -o server
 
-client: client.o
-	$(CC) client.c -o client
+client: src/client.o
+	$(CC) src/client.c -o client
