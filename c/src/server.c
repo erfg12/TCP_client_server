@@ -7,6 +7,16 @@ int main() {
     struct sockaddr_storage serverStorage;
     socklen_t addr_size;
 
+#ifdef _WIN32
+    WSADATA wsaData;
+    // Initialize Winsock
+    int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (iResult != 0) {
+        printf("WSAStartup failed with error: %d\n", iResult);
+        return 1;
+    }
+#endif
+
     welcomeSocket = socket(PF_INET, SOCK_STREAM, 0);
 
     serverAddr.sin_family = AF_INET;
@@ -16,10 +26,13 @@ int main() {
     memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
     bind(welcomeSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
-    if (listen(welcomeSocket,5)==0)
-        printf("listening\n");
+    if (listen(welcomeSocket,5) == INVALID_SOCKET) {
+        wprintf(L"socket function failed with error: %ld\n", WSAGetLastError());
+        WSACleanup();
+        return 1;
+    }
     else
-        printf("error\n");
+        printf("listening\n");
     
     addr_size = sizeof serverStorage;
     newSocket = accept(welcomeSocket, (struct sockaddr *) &serverStorage, &addr_size);
@@ -27,5 +40,8 @@ int main() {
     strcpy(buffer, "Hello World\n");
     send(newSocket, buffer, 13 ,0);
 
+#ifdef _WIN32
+    WSACleanup();
+#endif
     return 0;
 }

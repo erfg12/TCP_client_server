@@ -6,6 +6,16 @@ int main() {
     struct sockaddr_in serverAddr;
     socklen_t addr_size;
 
+#ifdef _WIN32
+    WSADATA wsaData;
+    // Initialize Winsock
+    int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (iResult != 0) {
+        printf("WSAStartup failed with error: %d\n", iResult);
+        return 1;
+    }
+#endif
+
     clientSocket = socket(PF_INET, SOCK_STREAM, 0);
 
     serverAddr.sin_family = AF_INET;
@@ -21,5 +31,8 @@ int main() {
     
     printf("received: %s", buffer);
 
+#ifdef _WIN32
+    WSACleanup();
+#endif
     return 0;
 }
