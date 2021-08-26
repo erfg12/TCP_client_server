@@ -20,7 +20,7 @@ int main() {
     welcomeSocket = socket(PF_INET, SOCK_STREAM, 0);
 
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(7891);
+    serverAddr.sin_port = htons(13000);
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
@@ -35,12 +35,14 @@ int main() {
         printf("listening\n");
     
     addr_size = sizeof serverStorage;
-    newSocket = accept(welcomeSocket, (struct sockaddr *) &serverStorage, &addr_size);
+    if ((newSocket = accept(welcomeSocket, (struct sockaddr *) &serverStorage, &addr_size)) > 0) {
+        printf("Client connected!\n");
+    }
 
     //Receive a message from client
 	while( (read_size = recv(newSocket, buffer, 1024, 0)) > 0 )
 	{
-        //send(newSocket, buffer, strlen(buffer), 0);
+        send(newSocket, buffer, strlen(buffer), 0); // send message back to client
         printf("Received: %s\n", buffer);
 	}
 
