@@ -1,7 +1,7 @@
 #include "networking.h"
 
 int main() {
-    int welcomeSocket, newSocket;
+    int welcomeSocket, newSocket, read_size;
     char buffer[1024];
     struct sockaddr_in serverAddr;
     struct sockaddr_storage serverStorage;
@@ -37,8 +37,12 @@ int main() {
     addr_size = sizeof serverStorage;
     newSocket = accept(welcomeSocket, (struct sockaddr *) &serverStorage, &addr_size);
 
-    strcpy(buffer, "Hello World\n");
-    send(newSocket, buffer, 13 ,0);
+    //Receive a message from client
+	while( (read_size = recv(newSocket, buffer, 1024, 0)) > 0 )
+	{
+        //send(newSocket, buffer, strlen(buffer), 0);
+        printf("Received: %s\n", buffer);
+	}
 
 #ifdef _WIN32
     WSACleanup();

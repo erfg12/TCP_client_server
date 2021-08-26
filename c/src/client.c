@@ -2,7 +2,7 @@
 
 int main() {
     int clientSocket;
-    char buffer[1024];
+    char message[1024] , server_reply[1024];
     struct sockaddr_in serverAddr;
     socklen_t addr_size;
 
@@ -27,9 +27,25 @@ int main() {
     addr_size = sizeof serverAddr;
     connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
 
-    recv(clientSocket, buffer, 1024, 0);
-    
-    printf("received: %s", buffer);
+    while(1)
+	{
+		printf("Message: ");
+		scanf("%s" , message);
+		
+		if (send(clientSocket, message, strlen(message), 0) < 0)
+		{
+			puts("Send failed");
+			return 1;
+		}
+		
+		if (recv(clientSocket, server_reply, 1024, 0) < 0)
+		{
+			puts("recv failed");
+			break;
+		}
+		
+        printf("Received: %s\n", server_reply);
+	}
 
 #ifdef _WIN32
     WSACleanup();
