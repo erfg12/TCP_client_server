@@ -26,13 +26,22 @@ int main() {
     memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
     bind(welcomeSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
+#ifdef _WIN32
     if (listen(welcomeSocket,5) == INVALID_SOCKET) {
-        wprintf(L"socket function failed with error: %ld\n", WSAGetLastError());
+        printf("socket function failed with error: %d\n", WSAGetLastError());
         WSACleanup();
         return 1;
     }
     else
         printf("listening\n");
+#else
+    if (listen(welcomeSocket,5) == SOL_SOCKET) {
+        printf("socket function failed with error\n");
+        return 1;
+    }
+    else
+        printf("listening\n");
+#endif
     
     addr_size = sizeof serverStorage;
     if ((newSocket = accept(welcomeSocket, (struct sockaddr *) &serverStorage, &addr_size)) > 0) {
