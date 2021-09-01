@@ -31,7 +31,7 @@ int main() {
     while(1)
 	{
 		printf("Message: ");
-		gets(message);
+        fgets(message,strlen(message),stdin);
 		
 		if (send(clientSocket, message, strlen(message), 0) < 0)
 		{
