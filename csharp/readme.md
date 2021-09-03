@@ -1,6 +1,6 @@
 ## TCP Server and Client
 
-Simple TCP terminal server and winforms client example code.
+Simple TCP server and winforms client example code. There's also a Unity game engine client example in the `unity_client` directory.
 
 Server has 3 optional args. `<IP> <PORT> <SSL>`
 

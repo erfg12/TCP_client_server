@@ -1,4 +1,6 @@
-# TCP_client_server
-Simple TCP/IP communications examples.
+# TCP Client/Server Examples
+Simple TCP/IP communications example project files.
 
-Currently have Java, C# and Node examples. I will add more when I get more free time.
+Each directory in this repo represents different programming languages.
+
+In each directory is a readme file for more information about that specific project.

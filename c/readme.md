@@ -4,8 +4,8 @@
 - [Ubuntu] In terminal run `sudo apt install build-essential`
 
 ## How To Build
-- [Windows] Open Command Prompt, navigate to c directory, type `mingw32-make`
-- [MacOS & Ubuntu] Open Terminal, navigate to c directory, type `make`
+- [Windows] Open Command Prompt, navigate to `c/src` directory, type `mingw32-make`
+- [MacOS & Ubuntu] Open Terminal, navigate to `c/src` directory, type `make`
 
 ## How To Debug
 1) Type `gdb client <or> server.exe`, type `start` once prompted with (gdb)
