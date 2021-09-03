@@ -51,8 +51,9 @@ int main() {
     //Receive a message from client
 	while( (read_size = recv(newSocket, buffer, 1024, 0)) > 0 )
 	{
-        send(newSocket, buffer, strlen(buffer), 0); // send message back to client
-        printf("Received: %s\n", buffer);
+        char * CmdString = strtok(buffer, "\n");
+        send(newSocket, CmdString, strlen(CmdString), 0); // send message back to client
+        printf("Received:%s\n", CmdString);
 	}
 
 #ifdef _WIN32

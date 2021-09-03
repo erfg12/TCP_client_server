@@ -31,10 +31,9 @@ int main() {
     while(1)
 	{
 		printf("Message: ");
-        char * CmdString = strtok(message, "\n");
-        fgets(CmdString,strlen(CmdString),stdin);
+        fgets(message,1024,stdin);
 		
-		if (send(clientSocket, CmdString, strlen(CmdString), 0) < 0)
+		if (send(clientSocket, message, strlen(message), 0) < 0)
 		{
 			puts("Send failed");
 			return 1;
@@ -46,7 +45,8 @@ int main() {
 			break;
 		}
 		
-        printf("Received: %s\n", server_reply);
+        char * CmdReply = strtok(server_reply, "\n");
+        printf("Received: %s\n", CmdReply);
 	}
 
 #ifdef _WIN32
