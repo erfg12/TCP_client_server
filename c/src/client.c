@@ -31,9 +31,10 @@ int main() {
     while(1)
 	{
 		printf("Message: ");
-        fgets(message,strlen(message),stdin);
+        char * CmdString = strtok(message, "\n");
+        fgets(CmdString,strlen(CmdString),stdin);
 		
-		if (send(clientSocket, message, strlen(message), 0) < 0)
+		if (send(clientSocket, CmdString, strlen(CmdString), 0) < 0)
 		{
 			puts("Send failed");
 			return 1;
