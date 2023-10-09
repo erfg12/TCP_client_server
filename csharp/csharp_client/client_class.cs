@@ -31,7 +31,7 @@ namespace csharp_client
             if (sslPolicyErrors == SslPolicyErrors.None)
                 return true;
 
-            Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+            MessageBox.Show($"Certificate error: {sslPolicyErrors}");
 
             // Do not allow this client to communicate with unauthenticated servers.
             return false;
@@ -68,7 +68,7 @@ namespace csharp_client
                         data = ""; // clear our data holder
                     }
                 }
-            }
+        }
             catch
             {
                 try
@@ -127,7 +127,7 @@ namespace csharp_client
                         Console.WriteLine("Exception: {0}", e.Message);
                         if (e.InnerException != null)
                             Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
-                        Console.WriteLine("Authentication failed - closing the connection.");
+                        MessageBox.Show("Authentication failed - closing the connection.");
                         client.Close();
                     }
                     var thread = new Thread(() => PacketProcessor(msgs, connectBtn, ssl));

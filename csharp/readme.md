@@ -14,23 +14,25 @@ Install OpenSSL. https://slproweb.com/products/Win32OpenSSL.html
 
 Open cmd prompt, type: 
 
-set OPENSSL_CONF=c:\OpenSSL-Win64\bin\openssl.cfg
-
-setx OPENSSL_CONF "c:\OpenSSL-Win64\bin\openssl.cfg"
+```
+set OPENSSL_CONF=%programfiles%\OpenSSL-Win64\bin\openssl.cfg
+setx OPENSSL_CONF "%programfiles%\OpenSSL-Win64\bin\openssl.cfg"
+```
 
 Also, type: 
 
-set RANDFILE=c:\OpenSSL-Win64\bin\.rnd
+```
+set RANDFILE=%programfiles%OpenSSL-Win64\bin\.rnd
+setx RANDFILE "%programfiles%OpenSSL-Win64\bin\.rnd"
+```
 
-setx RANDFILE "c:\OpenSSL-Win64\bin\.rnd"
+Generate your pem files: `openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365`
 
-Generate your pem files: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+Convert pem to crt file: `openssl x509 -outform der -in cert.pem -out cert.crt`
 
-Convert pem to crt file: openssl x509 -outform der -in cert.pem -out cert.crt
+Generate a .p12 file: `openssl pkcs12 -export -out keyStore.p12 -inkey key.pem -in cert.pem`
 
-Generate a .p12 file: openssl pkcs12 -export -out keyStore.p12 -inkey key.pem -in cert.pem
-
-Generate a .cer file: openssl x509 -inform PEM -in cert.pem -outform DER -out cert.cer
+Generate a .cer file: `openssl x509 -inform PEM -in cert.pem -outform DER -out cert.cer`
 
 Server: Double click on p12 to install. Client: Double click on cert.crt to install.
 

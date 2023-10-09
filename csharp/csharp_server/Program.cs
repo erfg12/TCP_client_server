@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -36,8 +37,15 @@ namespace csharp_server
                 {
                     if (args[2].ToLower().Equals("ssl") || args[2].ToLower().Equals("true") || args[2].Equals("1"))
                         ssl = true;
+                }
+
+                if (ssl)
+                {
+                    byte[] pfxData = File.ReadAllBytes("keyStore.p12");
                     if (File.Exists("cert.cer"))
-                        serverCertificate = X509Certificate.CreateFromCertFile("cert.cer");
+                        serverCertificate = new X509Certificate2(pfxData);
+
+                    //serverCertificate = X509Certificate.CreateFromCertFile("keyStore.p12");
                     else
                     {
                         Console.WriteLine("ERROR: cert.cer file missing! Place cert.cer next to csharp_server.exe file.");
@@ -144,7 +152,7 @@ namespace csharp_server
             {
                 if (ssl)
                 {
-                    stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls, true);
+                    stream.AuthenticateAsServer(serverCertificate, false, SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls, true);
                     streams.Add(stream, "");
                     stream.ReadTimeout = 600000;
                     stream.WriteTimeout = 600000;
@@ -172,7 +180,7 @@ namespace csharp_server
                         data = ""; // clear our data holder
                     }
                 }
-            }
+        }
             catch
             {
                 Console.WriteLine("A client has left");
@@ -186,6 +194,6 @@ namespace csharp_server
                 if (nStream != null)
                     nStream.Close();
             }
-        }
+}
     }
 }
